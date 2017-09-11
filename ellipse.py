@@ -28,7 +28,7 @@ def three_point_cosine_and_sine(P1, P0, P2):
     sine    = math.sqrt(1-cosine**2)
     return (cosine, sine)
 
-def draw_ellipse(dwg, F1, F2, Pl, d, show_leftovers=False, smaller_ellipse=True, colour='grey'):
+def draw_ellipse_fragment(dwg, F1, F2, Pl, d, show_leftovers=False, show_tickmarks=True, smaller_ellipse=True, colour='grey'):
     "Draw a tilted ellipse given two foci and the length of slack part of the rope attached to them"
     tilt_deg        = math.degrees( math.atan2(F2[1]-F1[1], F2[0]-F1[0]) )
     (Cx,Cy)         = midpoint(F1, F2)
@@ -51,7 +51,6 @@ def draw_ellipse(dwg, F1, F2, Pl, d, show_leftovers=False, smaller_ellipse=True,
     rho             = b**2/(a-c*cos_phi)
     Ax              =  rho * cos_phi
     Ay              = -rho * sin_phi
-#    target_group.add( dwg.circle( center=(Cx-c+Ax,Cy+Ay), r=8, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
 
     (cos_b,sin_b)   = three_point_cosine_and_sine(F1, F2, Pl)
     cos_phi         = quadrant_sign * cos_b
@@ -59,7 +58,6 @@ def draw_ellipse(dwg, F1, F2, Pl, d, show_leftovers=False, smaller_ellipse=True,
     rho             = b**2/(a+c*cos_phi)
     Bx              =  rho * cos_phi
     By              = -rho * sin_phi
-    target_group.add( dwg.circle( center=(Cx+c+Bx,Cy+By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
 
         # visible part of the component ellipse:
     target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,1 %f,%f" % (Cx-c+Ax, Cy+Ay, a, b, Cx+c+Bx, Cy+By), stroke=Pl[2], stroke_width=4 ) )
@@ -69,28 +67,34 @@ def draw_ellipse(dwg, F1, F2, Pl, d, show_leftovers=False, smaller_ellipse=True,
         target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,0 %f,%f" % (Cx-c+Ax, Cy+Ay, a, b, Cx+c+Bx, Cy+By),
                                     stroke=Pl[2], stroke_dasharray='3,7' ) )
 
+    if show_tickmarks:
+        # target_group.add( dwg.circle( center=(Cx-c+Ax,Cy+Ay), r=8, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
+        target_group.add( dwg.circle( center=(Cx+c+Bx,Cy+By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
+
     dwg.add( target_group )
 
-def draw_ellipsystem(P1, P2, P3, slack=200, show_leftovers=False, filename="example.svg", canvas_size=(1000,1000)):
+def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000)):
     "Draw a system of 6 ellipses that make up the sought-for smooth convex shape"
+    dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
     d12             = distance(P1, P2)
     d23             = distance(P2, P3)
     d31             = distance(P3, P1)
     tight_loop      = d12 + d23 + d31
-    loop_length     = tight_loop+slack
-    dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
-    draw_ellipse(dwg, P1, P2, P3, loop_length-d23-d31,  show_leftovers=show_leftovers,  smaller_ellipse=True,   colour=P3[2])
-    draw_ellipse(dwg, P3, P1, P2, loop_length-d31,      show_leftovers=show_leftovers,  smaller_ellipse=False,  colour=P2[2])
-    draw_ellipse(dwg, P2, P3, P1, loop_length-d12-d31,  show_leftovers=show_leftovers,  smaller_ellipse=True,   colour=P1[2])
-    draw_ellipse(dwg, P1, P2, P3, loop_length-d12,      show_leftovers=show_leftovers,  smaller_ellipse=False,  colour=P3[2])
-    draw_ellipse(dwg, P3, P1, P2, loop_length-d12-d23,  show_leftovers=show_leftovers,  smaller_ellipse=True,   colour=P2[2])
-    draw_ellipse(dwg, P2, P3, P1, loop_length-d23,      show_leftovers=show_leftovers,  smaller_ellipse=False,  colour=P1[2])
+    for slack in slacks:
+        loop_length     = tight_loop+slack
+        draw_ellipse_fragment(dwg, P1, P2, P3, loop_length-d23-d31,  show_leftovers=show_leftovers,  show_tickmarks=show_tickmarks, smaller_ellipse=True,   colour=P3[2])
+        draw_ellipse_fragment(dwg, P3, P1, P2, loop_length-d31,      show_leftovers=show_leftovers,  show_tickmarks=show_tickmarks, smaller_ellipse=False,  colour=P2[2])
+        draw_ellipse_fragment(dwg, P2, P3, P1, loop_length-d12-d31,  show_leftovers=show_leftovers,  show_tickmarks=show_tickmarks, smaller_ellipse=True,   colour=P1[2])
+        draw_ellipse_fragment(dwg, P1, P2, P3, loop_length-d12,      show_leftovers=show_leftovers,  show_tickmarks=show_tickmarks, smaller_ellipse=False,  colour=P3[2])
+        draw_ellipse_fragment(dwg, P3, P1, P2, loop_length-d12-d23,  show_leftovers=show_leftovers,  show_tickmarks=show_tickmarks, smaller_ellipse=True,   colour=P2[2])
+        draw_ellipse_fragment(dwg, P2, P3, P1, loop_length-d23,      show_leftovers=show_leftovers,  show_tickmarks=show_tickmarks, smaller_ellipse=False,  colour=P1[2])
     dwg.save()
 
 if __name__ == '__main__':
     P1              = (400, 500, 'red')
     P2              = (600, 400, 'orange')
     P3              = (500, 700, 'green')
-    draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
-    draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, filename='examples/three_foci_without_leftovers.svg')
+    draw_ellipsystem(P1, P2, P3, show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
+    draw_ellipsystem(P1, P2, P3, filename='examples/three_foci_without_leftovers.svg')
+    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[0, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
 
