@@ -68,7 +68,7 @@ def draw_ellipse(dwg, F1, F2, Pl, d, smaller_ellipse=True, colour='grey'):
 
     dwg.add( target_group )
 
-def draw_ellipsystem(P1, P2, P3, slack=200, filename="hexaellipse.svg", canvas_size=(1000,1000)):
+def draw_ellipsystem(P1, P2, P3, slack=200, filename="example.svg", canvas_size=(1000,1000)):
     "Draw a system of 6 ellipses that make up the sought-for smooth convex shape"
     d12             = distance(P1, P2)
     d23             = distance(P2, P3)
@@ -88,4 +88,4 @@ if __name__ == '__main__':
     P1              = (400, 500, 'red')
     P2              = (600, 400, 'orange')
     P3              = (500, 700, 'green')
-    draw_ellipsystem(P1, P2, P3, slack=250)
+    draw_ellipsystem(P1, P2, P3, slack=250, filename='examples/three_foci_example.svg')
