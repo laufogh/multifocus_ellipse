@@ -27,7 +27,7 @@ def three_point_cosine(P1, P0, P2):
     return scalar_product(P1, P0, P2)/(distance(P1,P0)*distance(P2,P0))
 
 def draw_ellipse_fragment(dwg, F1, F2, Pl, d, show_leftovers=False, show_tickmarks=True, is_inner_ellipse=True, colour='grey'):
-    "Draw a tilted ellipse given two foci and the length of slack part of the rope attached to them"
+    "Draw an ellipse fragment given two foci, the third point used for cut-off and the length of slack part of the rope attached to the foci"
 
         # internal absolute measurements of the ellipse (also available to the nested function) :
     c               = distance(F1, F2)/2
@@ -44,31 +44,30 @@ def draw_ellipse_fragment(dwg, F1, F2, Pl, d, show_leftovers=False, show_tickmar
         y               = -rho * sin_phi
         return (x,y)
 
+        # Translate and rotate the coordinates so that inside the SVG group element
+        #  the ellipse is centered around the origin and the major axis is horizontal:
     tilt_deg        = math.degrees( math.atan2(F2[1]-F1[1], F2[0]-F1[0]) )
     (Cx,Cy)         = midpoint(F1, F2)
+    target_group    = dwg.g( stroke=colour, stroke_width='2', fill='none', transform='translate(%f,%f),rotate(%f,0,0)' % (Cx,Cy,tilt_deg) )
 
-        # rotate the coordinates so that inside the SVG group element the major axis of the ellipse is horizontal
-    target_group    = dwg.g( stroke=colour, stroke_width='2', fill='none', transform='rotate(%f,%f,%f)' % (tilt_deg, Cx, Cy) )
-#    transform='translate(%f,%f),rotate(%f,0,0)' % (Cx,Cy,tilt_deg)
-
-    target_group.add( dwg.circle( center=(Cx-c,Cy), r=5, stroke=F1[2] ) )   # "from" focus in local coordinates
-    target_group.add( dwg.circle( center=(Cx+c,Cy), r=5, stroke=F2[2] ) )   # "to"   focus in local coordinates
+    target_group.add( dwg.circle( center=(-c,0), r=5, stroke=F1[2] ) )   # "from" focus in local coordinates
+    target_group.add( dwg.circle( center=(+c,0), r=5, stroke=F2[2] ) )   # "to"   focus in local coordinates
 
         # start and end points of the ellipse fragment:
     (Ax,Ay)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F2, F1, Pl), is_from_focus=True)
     (Bx,By)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F1, F2, Pl), is_from_focus=False)
 
         # visible part of the component ellipse:
-    target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,1 %f,%f" % (Cx-c+Ax, Cy+Ay, a, b, Cx+c+Bx, Cy+By), stroke=Pl[2], stroke_width=4 ) )
+    target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,1 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_width=4 ) )
 
         # invisible part of the component ellipse:
     if show_leftovers:
-        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,0 %f,%f" % (Cx-c+Ax, Cy+Ay, a, b, Cx+c+Bx, Cy+By),
+        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,0 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By),
                                     stroke=Pl[2], stroke_dasharray='3,7' ) )
 
     if show_tickmarks:
-        # target_group.add( dwg.circle( center=(Cx-c+Ax,Cy+Ay), r=8, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
-        target_group.add( dwg.circle( center=(Cx+c+Bx,Cy+By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
+        # target_group.add( dwg.circle( center=(-c+Ax,Ay), r=8, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
+        target_group.add( dwg.circle( center=(c+Bx,By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
 
     dwg.add( target_group )
 
