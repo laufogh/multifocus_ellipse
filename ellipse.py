@@ -39,9 +39,8 @@ def draw_ellipse(dwg, F1, F2, Pl, d, smaller_ellipse=True, colour='grey'):
         # rotate the coordinates so that inside the SVG group element the major axis of the ellipse is horizontal
     target_group    = dwg.g( stroke=colour, stroke_width='2', fill='none', transform='rotate(%f,%f,%f)' % (tilt_deg, Cx, Cy) )
 
-    target_group.add( dwg.ellipse( center=(Cx,Cy), r=(a,b) ) )
-    target_group.add( dwg.circle( center=(Cx-c,Cy), r=5, stroke=F1[2] ) )
-    target_group.add( dwg.circle( center=(Cx+c,Cy), r=5, stroke=F2[2] ) )
+    target_group.add( dwg.circle( center=(Cx-c,Cy), r=5, stroke=F1[2] ) )   # "from" focus in local coordinates
+    target_group.add( dwg.circle( center=(Cx+c,Cy), r=5, stroke=F2[2] ) )   # "to"   focus in local coordinates
 
         # Now draw the tick marks (each elliptic arc is taken from a smaller to a bigger mark, clockwise; fill colour = arc colour)
     quadrant_sign       = 1 if smaller_ellipse else -1
@@ -49,18 +48,23 @@ def draw_ellipse(dwg, F1, F2, Pl, d, smaller_ellipse=True, colour='grey'):
     (cos_a,sin_a)   = three_point_cosine_and_sine(F2, F1, Pl)
     cos_phi         = -quadrant_sign * cos_a
     sin_phi         =  quadrant_sign * sin_a
-    rho             = b**2/(a-c*cos_phi)-quadrant_sign*15
-    xl              =  rho * cos_phi
-    yl              = -rho * sin_phi
-    target_group.add( dwg.circle( center=(Cx-c+xl,Cy+yl), r=10, stroke=F1[2], fill=Pl[2] ) )
+    rho             = b**2/(a-c*cos_phi)
+    Ax              =  rho * cos_phi
+    Ay              = -rho * sin_phi
+#    target_group.add( dwg.circle( center=(Cx-c+Ax,Cy+Ay), r=8, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
 
     (cos_b,sin_b)   = three_point_cosine_and_sine(F1, F2, Pl)
     cos_phi         = quadrant_sign * cos_b
     sin_phi         = quadrant_sign * sin_b
-    rho             = b**2/(a+c*cos_phi)-quadrant_sign*15
-    xl              =  rho * cos_phi
-    yl              = -rho * sin_phi
-    target_group.add( dwg.circle( center=(Cx+c+xl,Cy+yl), r=15, stroke=F2[2], fill=Pl[2] ) )
+    rho             = b**2/(a+c*cos_phi)
+    Bx              =  rho * cos_phi
+    By              = -rho * sin_phi
+    target_group.add( dwg.circle( center=(Cx+c+Bx,Cy+By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
+
+        # visible part of the component ellipse:
+    target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,1 %f,%f" % (Cx-c+Ax, Cy+Ay, a, b, Cx+c+Bx, Cy+By), stroke=Pl[2], stroke_width=4 ) )
+        # invisible part of the component ellipse:
+    target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,0 %f,%f" % (Cx-c+Ax, Cy+Ay, a, b, Cx+c+Bx, Cy+By), stroke=Pl[2], stroke_dasharray='3,7' ) )
 
     dwg.add( target_group )
 
