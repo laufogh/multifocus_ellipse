@@ -26,13 +26,26 @@ def three_point_cosine(P1, P0, P2):
     "Find cosine of the angle between P1-P0 and P2-P0 (note the order of args)"
     return scalar_product(P1, P0, P2)/(distance(P1,P0)*distance(P2,P0))
 
+def sign(x):
+    "Amusingly, Python doesn't have a native sign() function"
+    return (x>0)-(x<0)
+
+def points_are_clockwise(P1, P2, P3):
+    "Detect whether the points are ordered clockwise (1), collinear (0) or counter-clockwise(-1)"
+    return  sign((P2[0]-P1[0])*(P3[1]-P1[1])-(P2[1]-P1[1])*(P3[0]-P1[0]))
+
 def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000)):
     "Draw a system of 6 ellipse fragments that make up the sought-for smooth convex shape"
 
     dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
 
-    def draw_ellipse_fragment(F1, F2, Pl, d, is_inner_ellipse, colour='grey'):
+    def draw_ellipse_fragment(F1, F2, Pl, d, colour='grey'):
         "Draw an ellipse fragment given two foci, the third point used for cut-off and the length of slack part of the rope attached to the foci"
+
+        clockwise_sign  = points_are_clockwise(F1, F2, Pl)
+
+        if clockwise_sign == -1:
+            (F1,F2) = (F2,F1)
 
             # internal absolute measurements of the ellipse (also available to the nested function) :
         c               = distance(F1, F2)/2
@@ -41,10 +54,9 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
 
         def find_a_point_on_the_ellipse(cos_f, is_from_focus):
             focus_sign      = -1 if is_from_focus    else  1
-            quadrant_sign   =  1 if is_inner_ellipse else -1
-            cos_phi         = focus_sign * quadrant_sign * cos_f
-            sin_phi         =              quadrant_sign * math.sqrt(1-cos_f**2)
-            rho             = b**2/(a + focus_sign * c * cos_phi)
+            cos_phi         = focus_sign * cos_f
+            sin_phi         = math.sqrt(1-cos_f**2)
+            rho             = clockwise_sign * b**2/(a + focus_sign * clockwise_sign * c * cos_phi)
             x               =  rho * cos_phi
             y               = -rho * sin_phi
             return (x,y)
@@ -81,12 +93,12 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
     tight_loop      = d12 + d23 + d31
     for slack in slacks:
         loop_length     = tight_loop+slack
-        draw_ellipse_fragment(P1, P2, P3, loop_length-d23-d31,  True,   colour=P3[2])
-        draw_ellipse_fragment(P3, P1, P2, loop_length-d31,      False,  colour=P2[2])
-        draw_ellipse_fragment(P2, P3, P1, loop_length-d12-d31,  True,   colour=P1[2])
-        draw_ellipse_fragment(P1, P2, P3, loop_length-d12,      False,  colour=P3[2])
-        draw_ellipse_fragment(P3, P1, P2, loop_length-d12-d23,  True,   colour=P2[2])
-        draw_ellipse_fragment(P2, P3, P1, loop_length-d23,      False,  colour=P1[2])
+        draw_ellipse_fragment(P1, P2, P3, loop_length-d23-d31,  colour=P3[2])
+        draw_ellipse_fragment(P1, P3, P2, loop_length-d31,      colour=P2[2])
+        draw_ellipse_fragment(P2, P3, P1, loop_length-d12-d31,  colour=P1[2])
+        draw_ellipse_fragment(P2, P1, P3, loop_length-d12,      colour=P3[2])
+        draw_ellipse_fragment(P3, P1, P2, loop_length-d12-d23,  colour=P2[2])
+        draw_ellipse_fragment(P3, P2, P1, loop_length-d23,      colour=P1[2])
     dwg.save()
 
 if __name__ == '__main__':
