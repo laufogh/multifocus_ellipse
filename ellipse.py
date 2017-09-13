@@ -44,23 +44,20 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
 
         clockwise_sign  = points_are_clockwise(F1, F2, Pl)
 
-        if clockwise_sign == -1:
-            (F1,F2) = (F2,F1)
-
             # internal absolute measurements of the ellipse (also available to the nested function) :
         c               = distance(F1, F2)/2
         a               = d/2
         b               = math.sqrt( a**2 - c**2 )
 
         def polar_point_on_the_ellipse(cos_f):
-            rho             = clockwise_sign * b**2/(a + clockwise_sign * c * cos_f)
+            rho             = b**2/(a + clockwise_sign * c * cos_f)
             return (cos_f, rho)
 
         def cartesian( polar, focus_sign=1 ):
             (cos_f, rho)    = polar
             sin_f           = math.sqrt(1-cos_f**2)
-            x               = focus_sign * rho * cos_f
-            y               =              rho * sin_f
+            x               = focus_sign * ( rho * cos_f + clockwise_sign * c)
+            y               =                rho * sin_f
             return (x,y)
 
             # Translate, rotate and flip the coordinates so that inside the SVG group element
@@ -73,23 +70,27 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         target_group.add( dwg.circle( center=(-c,0), r=5, stroke=F1[2] ) )   # "from" focus in local coordinates
         target_group.add( dwg.circle( center=(+c,0), r=5, stroke=F2[2] ) )   # "to"   focus in local coordinates
 
-            # start and end points of the ellipse fragment:
-        (Ax,Ay)         = cartesian( polar_point_on_the_ellipse( three_point_cosine(F2, F1, Pl) ), focus_sign=-1)
-        (Bx,By)         = cartesian( polar_point_on_the_ellipse( three_point_cosine(F1, F2, Pl) ) )
+        cos_alpha   = three_point_cosine(F2, F1, Pl)
+        cos_beta    = three_point_cosine(F1, F2, Pl)
 
-#        if clockwise_sign == -1:
-#            (Ax,Ay,Bx,By) = (Bx,By,Ax,Ay)
+            # A and B are start and end points of the ellipse fragment:
+        if clockwise_sign == 1:
+            (Ax,Ay)   = cartesian( polar_point_on_the_ellipse( cos_alpha ), focus_sign=-1)
+            (Bx,By)   = cartesian( polar_point_on_the_ellipse( cos_beta  ) )
+        else:
+            (Ax,Ay)   = cartesian( polar_point_on_the_ellipse( cos_beta  ), focus_sign=-1 )
+            (Bx,By)   = cartesian( polar_point_on_the_ellipse( cos_alpha ) )
 
             # visible part of the component ellipse:
-        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_width=4 ) )
+        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=Pl[2], stroke_width=4 ) )
 
             # invisible part of the component ellipse:
         if show_leftovers:
-            target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,1 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_dasharray='3,7' ) )
+            target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,1 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=Pl[2], stroke_dasharray='3,7' ) )
 
         if show_tickmarks:
-            # target_group.add( dwg.circle( center=(-c+Ax,Ay), r=8, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
-            target_group.add( dwg.circle( center=(c+Bx,By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
+#            target_group.add( dwg.circle( center=(Ax,Ay), r=12, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
+            target_group.add( dwg.circle( center=(Bx,By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
 
         dwg.add( target_group )
 
