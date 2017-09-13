@@ -10,13 +10,13 @@
 import math
 import svgwrite
 
-def distance(F1, F2):
+def distance(P1, P2):
     "Find the distance between two 2D points"
-    return math.sqrt( math.pow(F2[0]-F1[0], 2)+ math.pow(F2[1]-F1[1], 2) )
+    return math.sqrt( (P2[0]-P1[0])**2 + (P2[1]-P1[1])**2 )
 
-def midpoint(F1, F2):
+def midpoint(P1, P2):
     "Find the midpoint of two 2D points"
-    return ((F1[0]+F2[0])/2, (F1[1]+F2[1])/2)
+    return ((P1[0]+P2[0])/2, (P1[1]+P2[1])/2)
 
 def scalar_product(P1, P0, P2):
     "Find the scalar product of P1-P0 and P2-P0 given all the three points (note the order or args)"
