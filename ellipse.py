@@ -52,9 +52,13 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         a               = d/2
         b               = math.sqrt( a**2 - c**2 )
 
-        def find_a_point_on_the_ellipse(cos_f, focus_sign=1):
-            sin_f           = math.sqrt(1-cos_f**2)
+        def polar_point_on_the_ellipse(cos_f):
             rho             = clockwise_sign * b**2/(a + clockwise_sign * c * cos_f)
+            return (cos_f, rho)
+
+        def cartesian( polar, focus_sign=1 ):
+            (cos_f, rho)    = polar
+            sin_f           = math.sqrt(1-cos_f**2)
             x               = focus_sign * rho * cos_f
             y               =              rho * sin_f
             return (x,y)
@@ -70,8 +74,11 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         target_group.add( dwg.circle( center=(+c,0), r=5, stroke=F2[2] ) )   # "to"   focus in local coordinates
 
             # start and end points of the ellipse fragment:
-        (Ax,Ay)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F2, F1, Pl), focus_sign=-1)
-        (Bx,By)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F1, F2, Pl) )
+        (Ax,Ay)         = cartesian( polar_point_on_the_ellipse( three_point_cosine(F2, F1, Pl) ), focus_sign=-1)
+        (Bx,By)         = cartesian( polar_point_on_the_ellipse( three_point_cosine(F1, F2, Pl) ) )
+
+#        if clockwise_sign == -1:
+#            (Ax,Ay,Bx,By) = (Bx,By,Ax,Ay)
 
             # visible part of the component ellipse:
         target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_width=4 ) )
