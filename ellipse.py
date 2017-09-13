@@ -56,14 +56,15 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
             sin_f           = math.sqrt(1-cos_f**2)
             rho             = clockwise_sign * b**2/(a + clockwise_sign * c * cos_f)
             x               = focus_sign * rho * cos_f
-            y               =             -rho * sin_f
+            y               =              rho * sin_f
             return (x,y)
 
-            # Translate and rotate the coordinates so that inside the SVG group element
+            # Translate, rotate and flip the coordinates so that inside the SVG group element
+            #  we assume Y grows upwards (a standard mathematical convention),
             #  the ellipse is centered around the origin and the major axis is horizontal:
         tilt_deg        = math.degrees( math.atan2(F2[1]-F1[1], F2[0]-F1[0]) )
         (Cx,Cy)         = midpoint(F1, F2)
-        target_group    = dwg.g( stroke=colour, stroke_width='2', fill='none', transform='translate(%f,%f),rotate(%f,0,0)' % (Cx,Cy,tilt_deg) )
+        target_group    = dwg.g( stroke=colour, stroke_width='2', fill='none', transform='translate(%f,%f),rotate(%f,0,0),scale(1,-1)' % (Cx,Cy,tilt_deg) )
 
         target_group.add( dwg.circle( center=(-c,0), r=5, stroke=F1[2] ) )   # "from" focus in local coordinates
         target_group.add( dwg.circle( center=(+c,0), r=5, stroke=F2[2] ) )   # "to"   focus in local coordinates
@@ -73,11 +74,11 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         (Bx,By)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F1, F2, Pl) )
 
             # visible part of the component ellipse:
-        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,1 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_width=4 ) )
+        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_width=4 ) )
 
             # invisible part of the component ellipse:
         if show_leftovers:
-            target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,0 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_dasharray='3,7' ) )
+            target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,1 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_dasharray='3,7' ) )
 
         if show_tickmarks:
             # target_group.add( dwg.circle( center=(-c+Ax,Ay), r=8, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
