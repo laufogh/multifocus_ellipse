@@ -52,13 +52,11 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         a               = d/2
         b               = math.sqrt( a**2 - c**2 )
 
-        def find_a_point_on_the_ellipse(cos_f, is_from_focus):
-            focus_sign      = -1 if is_from_focus    else  1
-            cos_phi         = focus_sign * cos_f
-            sin_phi         = math.sqrt(1-cos_f**2)
-            rho             = clockwise_sign * b**2/(a + focus_sign * clockwise_sign * c * cos_phi)
-            x               =  rho * cos_phi
-            y               = -rho * sin_phi
+        def find_a_point_on_the_ellipse(cos_f, focus_sign=1):
+            sin_f           = math.sqrt(1-cos_f**2)
+            rho             = clockwise_sign * b**2/(a + clockwise_sign * c * cos_f)
+            x               = focus_sign * rho * cos_f
+            y               =             -rho * sin_f
             return (x,y)
 
             # Translate and rotate the coordinates so that inside the SVG group element
@@ -71,8 +69,8 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         target_group.add( dwg.circle( center=(+c,0), r=5, stroke=F2[2] ) )   # "to"   focus in local coordinates
 
             # start and end points of the ellipse fragment:
-        (Ax,Ay)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F2, F1, Pl), is_from_focus=True)
-        (Bx,By)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F1, F2, Pl), is_from_focus=False)
+        (Ax,Ay)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F2, F1, Pl), focus_sign=-1)
+        (Bx,By)         = find_a_point_on_the_ellipse(cos_f=three_point_cosine(F1, F2, Pl) )
 
             # visible part of the component ellipse:
         target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,1 %f,%f" % (-c+Ax, Ay, a, b, c+Bx, By), stroke=Pl[2], stroke_width=4 ) )
