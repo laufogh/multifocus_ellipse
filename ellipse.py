@@ -49,15 +49,11 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         a               = d/2
         b               = math.sqrt( a**2 - c**2 )
 
-        def polar_point_on_the_ellipse(cos_f, focus_sign):
-            rho             = b**2/(a + focus_sign * c * cos_f)
-            return (cos_f, rho, focus_sign)
-
-        def cartesian( polar ):
-            (cos_f, rho, focus_sign)    = polar
-            sin_f                       = math.sqrt(1-cos_f**2)
-            x                           = rho * cos_f + focus_sign * c
-            y                           = rho * sin_f
+        def point_on_the_ellipse(cos_f, focus_sign):
+            rho             = b**2 / (a + focus_sign * c * cos_f)
+            sin_f           = math.sqrt(1 - cos_f**2)
+            x               = rho * cos_f + focus_sign * c
+            y               = rho * sin_f
             return (x,y)
 
             # Translate, rotate and flip the coordinates so that inside the SVG group element
@@ -75,15 +71,15 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
 
             # A and B are start and end points of the ellipse fragment:
         (cos_for_A, cos_for_B) = (-cos_alpha, cos_beta) if clockwise_sign == 1 else (-cos_beta, cos_alpha)
-        (Ax,Ay)     = cartesian( polar_point_on_the_ellipse( cos_for_A, focus_sign=-clockwise_sign ) )
-        (Bx,By)     = cartesian( polar_point_on_the_ellipse( cos_for_B, focus_sign= clockwise_sign ) )
+        (Ax,Ay)     = point_on_the_ellipse( cos_for_A, focus_sign=-clockwise_sign )
+        (Bx,By)     = point_on_the_ellipse( cos_for_B, focus_sign= clockwise_sign )
 
             # find the angles relative to F1 in local coordinates:
         gamma   = math.acos( three_point_cosine((c,0), (-c,0), (Ax,Ay)) )
         delta   = math.acos( three_point_cosine((c,0), (-c,0), (Bx,By)) )
             # now we can create any convex combination and map it onto the corresponding ellipse fragment:
         mix     = gamma*0.8 + delta*0.2
-        (Mx,My) = cartesian( polar_point_on_the_ellipse( math.cos( mix ), focus_sign=-1 ) )
+        (Mx,My) = point_on_the_ellipse( math.cos( mix ), focus_sign=-1 )
 
             # visible part of the component ellipse:
         target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=Pl[2], stroke_width=4 ) )
