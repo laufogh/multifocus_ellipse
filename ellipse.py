@@ -49,15 +49,15 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         a               = d/2
         b               = math.sqrt( a**2 - c**2 )
 
-        def polar_point_on_the_ellipse(cos_f, focus_sign=1):
-            rho             = b**2/(a + clockwise_sign * c * cos_f)
+        def polar_point_on_the_ellipse(cos_f, focus_sign):
+            rho             = b**2/(a + focus_sign * c * cos_f)
             return (cos_f, rho, focus_sign)
 
         def cartesian( polar ):
             (cos_f, rho, focus_sign)    = polar
             sin_f                       = math.sqrt(1-cos_f**2)
-            x                           = focus_sign * ( rho * cos_f + clockwise_sign * c)
-            y                           =                rho * sin_f
+            x                           = rho * cos_f + focus_sign * c
+            y                           = rho * sin_f
             return (x,y)
 
             # Translate, rotate and flip the coordinates so that inside the SVG group element
@@ -74,9 +74,12 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         cos_beta    = three_point_cosine(F1, F2, Pl)
 
             # A and B are start and end points of the ellipse fragment:
-        (cos_for_A, cos_for_B) = (cos_alpha, cos_beta) if clockwise_sign == 1 else (cos_beta, cos_alpha)
-        (Ax,Ay)   = cartesian( polar_point_on_the_ellipse( cos_for_A, focus_sign=-1) )
-        (Bx,By)   = cartesian( polar_point_on_the_ellipse( cos_for_B ) )
+        (cos_for_A, cos_for_B) = (-cos_alpha, cos_beta) if clockwise_sign == 1 else (-cos_beta, cos_alpha)
+        (Ax,Ay)     = cartesian( polar_point_on_the_ellipse( cos_for_A, focus_sign=-clockwise_sign ) )
+        (Bx,By)     = cartesian( polar_point_on_the_ellipse( cos_for_B, focus_sign= clockwise_sign ) )
+
+#        cos_gamma   = three_point_cosine(F2, F1, (Bx,By))
+#        (Dx,Dy)     = cartesian( polar_point_on_the_ellipse( cos_gamma, focus_sign=-1 ) )
 
             # visible part of the component ellipse:
         target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=Pl[2], stroke_width=4 ) )
