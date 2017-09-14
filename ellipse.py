@@ -78,8 +78,12 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         (Ax,Ay)     = cartesian( polar_point_on_the_ellipse( cos_for_A, focus_sign=-clockwise_sign ) )
         (Bx,By)     = cartesian( polar_point_on_the_ellipse( cos_for_B, focus_sign= clockwise_sign ) )
 
-#        cos_gamma   = three_point_cosine(F2, F1, (Bx,By))
-#        (Dx,Dy)     = cartesian( polar_point_on_the_ellipse( cos_gamma, focus_sign=-1 ) )
+            # find the angles relative to F1 in local coordinates:
+        gamma   = math.acos( three_point_cosine((c,0), (-c,0), (Ax,Ay)) )
+        delta   = math.acos( three_point_cosine((c,0), (-c,0), (Bx,By)) )
+            # now we can create any convex combination and map it onto the corresponding ellipse fragment:
+        mix     = gamma*0.8 + delta*0.2
+        (Mx,My) = cartesian( polar_point_on_the_ellipse( math.cos( mix ), focus_sign=-1 ) )
 
             # visible part of the component ellipse:
         target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=Pl[2], stroke_width=4 ) )
@@ -91,6 +95,7 @@ def draw_ellipsystem(P1, P2, P3, slacks=[250], show_leftovers=False, show_tickma
         if show_tickmarks:
 #            target_group.add( dwg.circle( center=(Ax,Ay), r=12, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
             target_group.add( dwg.circle( center=(Bx,By), r=8, stroke=F2[2], fill=Pl[2] ) )     # "to" tick mark
+#            target_group.add( dwg.circle( center=(Mx,My), r=5, stroke=Pl[2], fill='none' ) )    # "mix" tick mark
 
         dwg.add( target_group )
 
@@ -112,7 +117,7 @@ if __name__ == '__main__':
     P1              = (400, 500, 'red')
     P2              = (600, 400, 'orange')
     P3              = (500, 700, 'green')
-    draw_ellipsystem(P1, P2, P3, show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
     draw_ellipsystem(P1, P2, P3, filename='examples/three_foci_without_leftovers.svg')
-    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[0, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
+    draw_ellipsystem(P1, P2, P3, show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
+    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[1, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
 
