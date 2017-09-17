@@ -39,17 +39,15 @@ def draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, show_tickmarks
 
     dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
 
-    def draw_ellipse_fragment(F1, F2, Pl, d, colour='grey', pencil_mark_fraction=None):
+    def draw_ellipse_fragment(Pprev, F1, F2, Pnext, d, pencil_mark_fraction=None):
         "Draw an ellipse fragment given two foci, the third point used for cut-off and the length of slack part of the rope attached to the foci"
-
-        clockwise_sign  = points_are_clockwise(F1, F2, Pl)
 
             # internal absolute measurements of the ellipse (also available to the nested function) :
         c               = distance(F1, F2)/2
         a               = d/2
         b               = math.sqrt( a**2 - c**2 )
 
-        def point_on_the_ellipse(cos_f, focus_sign):
+        def point_on_the_ellipse(cos_f, focus_sign=-1):
             rho             = b**2 / (a + focus_sign * c * cos_f)
             sin_f           = math.sqrt(1 - cos_f**2)
             x               = rho * cos_f + focus_sign * c
@@ -61,16 +59,20 @@ def draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, show_tickmarks
             #  the ellipse is centered around the origin and the major axis is horizontal:
         tilt_deg        = math.degrees( math.atan2(F2[1]-F1[1], F2[0]-F1[0]) )
         (Cx,Cy)         = midpoint(F1, F2)
-        target_group    = dwg.g( stroke=colour, stroke_width='2', fill='none', transform='translate(%f,%f),rotate(%f,0,0),scale(1,-1)' % (Cx,Cy,tilt_deg) )
-
-        cos_alpha   = three_point_cosine(F2, F1, Pl)
-        cos_beta    = three_point_cosine(F1, F2, Pl)
+        target_group    = dwg.g( stroke=Pnext[2], stroke_width='2', fill='none', transform='translate(%f,%f),rotate(%f,0,0),scale(1,-1)' % (Cx,Cy,tilt_deg) )
 
             # A and B are start and end points of the ellipse fragment:
-        (cos_for_A, cos_for_B) = (-cos_alpha, cos_beta) if clockwise_sign == 1 else (-cos_beta, cos_alpha)
+        if Pprev:
+            cos_for_A       = -three_point_cosine(F2, F1, Pprev)
+            cos_for_B       =  three_point_cosine(F1, F2, Pnext)
+            clockwise_sign  =  1
+        else:
+            cos_for_A       = -three_point_cosine(F1, F2, Pnext)
+            cos_for_B       =  three_point_cosine(F2, F1, Pnext)
+            clockwise_sign  = -1
+
         (Ax,Ay)     = point_on_the_ellipse( cos_for_A, focus_sign=-clockwise_sign )
         (Bx,By)     = point_on_the_ellipse( cos_for_B, focus_sign= clockwise_sign )
-
 
             # visible part of the component ellipse:
         target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke_width=4 ) )
@@ -80,8 +82,8 @@ def draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, show_tickmarks
             target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,1 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke_dasharray='3,7' ) )
 
         if show_tickmarks:
-#            target_group.add( dwg.circle( center=(Ax,Ay), r=12, stroke=F1[2], fill=Pl[2] ) )    # "from" tick mark
-            target_group.add( dwg.circle( center=(Bx,By), r=8,  fill=Pl[2] ) )     # "to" tick mark
+#            target_group.add( dwg.circle( center=(Ax,Ay), r=12, stroke=F1[2], fill=Pnext[2] ) )    # "from" tick mark
+            target_group.add( dwg.circle( center=(Bx,By), r=8,  fill=Pnext[2] ) )     # "to" tick mark
 
         if pencil_mark_fraction is not None:
                 # find the angles relative to F1 in local coordinates:
@@ -89,7 +91,7 @@ def draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, show_tickmarks
             delta   = math.acos( three_point_cosine((c,0), (-c,0), (Bx,By)) )
                 # now we can create any convex combination and map it onto the corresponding ellipse fragment:
             mix     = gamma * (1-pencil_mark_fraction) + delta * pencil_mark_fraction
-            (Mx,My) = point_on_the_ellipse( math.cos( mix ), focus_sign=-1 )
+            (Mx,My) = point_on_the_ellipse( math.cos( mix ) )
 
             target_group.add( dwg.circle( center=(Mx,My), r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
             target_group.add( dwg.line( start=(-c,0), end=(Mx,My), stroke='blue', stroke_width=1  ) )
@@ -107,12 +109,12 @@ def draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, show_tickmarks
     tight_loop      = d12 + d23 + d31
 
     loop_length     = tight_loop+slack
-    draw_ellipse_fragment(P1, P2, P3, loop_length-d23-d31,  colour=P3[2], pencil_mark_fraction=pencil_mark_fraction)
-    draw_ellipse_fragment(P1, P3, P2, loop_length-d31,      colour=P2[2])
-    draw_ellipse_fragment(P2, P3, P1, loop_length-d12-d31,  colour=P1[2])
-    draw_ellipse_fragment(P2, P1, P3, loop_length-d12,      colour=P3[2])
-    draw_ellipse_fragment(P3, P1, P2, loop_length-d12-d23,  colour=P2[2])
-    draw_ellipse_fragment(P3, P2, P1, loop_length-d23,      colour=P1[2])
+    draw_ellipse_fragment(P3,   P1, P2, P3, loop_length-d23-d31,  pencil_mark_fraction=pencil_mark_fraction)
+    draw_ellipse_fragment(None, P1, P3, P2, loop_length-d31     )
+    draw_ellipse_fragment(P1,   P2, P3, P1, loop_length-d12-d31 )
+    draw_ellipse_fragment(None, P2, P1, P3, loop_length-d12     )
+    draw_ellipse_fragment(P2,   P3, P1, P2, loop_length-d12-d23 )
+    draw_ellipse_fragment(None, P3, P2, P1, loop_length-d23     )
     dwg.save()
 
 if __name__ == '__main__':
