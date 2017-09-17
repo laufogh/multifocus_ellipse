@@ -34,7 +34,7 @@ def points_are_clockwise(P1, P2, P3):
     "Detect whether the points are ordered clockwise (1), collinear (0) or counter-clockwise(-1)"
     return  sign((P2[0]-P1[0])*(P3[1]-P1[1])-(P2[1]-P1[1])*(P3[0]-P1[0]))
 
-def draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000), pencil_mark_fraction=None):
+def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000), pencil_mark_fraction=None):
     "Draw a system of 6 ellipse fragments that make up the sought-for smooth convex shape"
 
     dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
@@ -99,30 +99,27 @@ def draw_ellipsystem(P1, P2, P3, slack=250, show_leftovers=False, show_tickmarks
 
         dwg.add( target_group )
 
-    dwg.add( dwg.circle( center=P1[0:2], r=5, stroke=P1[2], stroke_width=2, fill=P1[2] ) )
-    dwg.add( dwg.circle( center=P2[0:2], r=5, stroke=P2[2], stroke_width=2, fill=P2[2] ) )
-    dwg.add( dwg.circle( center=P3[0:2], r=5, stroke=P3[2], stroke_width=2, fill=P3[2] ) )
+    dist_2_prev = []
+    n           = len(P)
+    for i in range(n):
+        dwg.add( dwg.circle( center=P[i][0:2], r=5, stroke=P[i][2], stroke_width=2, fill=P[i][2] ) )
+        dist_2_prev.append( distance(P[i], P[i-1]) )
 
-    d12             = distance(P1, P2)
-    d23             = distance(P2, P3)
-    d31             = distance(P3, P1)
-    tight_loop      = d12 + d23 + d31
+    for i in range(n):
+        draw_ellipse_fragment(P[i-1],   P[i],   P[i+1-n],   P[i+2-n],   slack+dist_2_prev[i+1-n] )                      # consecutive foci
+        draw_ellipse_fragment(None,     P[i],   P[i+2-n],   P[i+1-n],   slack+dist_2_prev[i+1-n]+dist_2_prev[i+2-n] )   # skip-one focus
 
-    loop_length     = tight_loop+slack
-    draw_ellipse_fragment(P3,   P1, P2, P3, loop_length-d23-d31,  pencil_mark_fraction=pencil_mark_fraction)
-    draw_ellipse_fragment(None, P1, P3, P2, loop_length-d31     )
-    draw_ellipse_fragment(P1,   P2, P3, P1, loop_length-d12-d31 )
-    draw_ellipse_fragment(None, P2, P1, P3, loop_length-d12     )
-    draw_ellipse_fragment(P2,   P3, P1, P2, loop_length-d12-d23 )
-    draw_ellipse_fragment(None, P3, P2, P1, loop_length-d23     )
     dwg.save()
 
 if __name__ == '__main__':
     P1              = (400, 500, 'red')
     P2              = (600, 400, 'orange')
-    P3              = (500, 700, 'green')
-    draw_ellipsystem(P1, P2, P3, filename='examples/three_foci_without_leftovers.svg')
-    draw_ellipsystem(P1, P2, P3, filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
-    draw_ellipsystem(P1, P2, P3, show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
+    P3              = (600, 700, 'purple')
+    P4              = (500, 700, 'green')
+    draw_ellipsystem([P1, P2, P4], filename='examples/three_foci_without_leftovers.svg')
+    draw_ellipsystem([P1, P2, P4], show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
+    draw_ellipsystem([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg')
+    draw_ellipsystem([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg')
+#    draw_ellipsystem(P1, P2, P3, filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
 #    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[1, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
 
