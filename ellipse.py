@@ -75,15 +75,19 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
         (Bx,By)     = point_on_the_ellipse( cos_for_B, focus_sign= clockwise_sign )
 
             # visible part of the component ellipse:
-        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke_width=4 ) )
+        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=F1[2], stroke_width=6, stroke_dashoffset=10, stroke_dasharray='10,10') )
+
+        target_group.add( dwg.path( d="M %f,%f A %f,%f 0 0,0 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=F2[2], stroke_width=6, stroke_dasharray='10,10' ) )
 
             # invisible part of the component ellipse:
         if show_leftovers:
-            target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,1 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke_dasharray='3,7' ) )
+            target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,1 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=F1[2], stroke_dasharray='5,15' ) )
+            target_group.add( dwg.path( d="M %f,%f A %f,%f 0 1,1 %f,%f" % (Ax, Ay, a, b, Bx, By), stroke=F2[2], stroke_dasharray='5,15', stroke_dashoffset=10 ) )
 
         if show_tickmarks:
+            tick_mark_colour    = F1[2] if Pprev else F2[2]
 #            target_group.add( dwg.circle( center=(Ax,Ay), r=12, stroke=F1[2], fill=Pnext[2] ) )    # "from" tick mark
-            target_group.add( dwg.circle( center=(Bx,By), r=8,  fill=Pnext[2] ) )     # "to" tick mark
+            target_group.add( dwg.circle( center=(Bx,By), r=8, stroke=tick_mark_colour, fill=tick_mark_colour ) )     # "to" tick mark
 
         if pencil_mark_fraction is not None:
                 # find the angles relative to F1 in local coordinates:
@@ -120,6 +124,7 @@ if __name__ == '__main__':
     draw_ellipsystem([P1, P2, P4], show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
     draw_ellipsystem([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg')
     draw_ellipsystem([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg')
+
 #    draw_ellipsystem(P1, P2, P3, filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
 #    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[1, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
 
