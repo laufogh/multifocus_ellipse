@@ -77,14 +77,13 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
         tilt_deg        = ellipse.tilt_deg()
 
             # visible part of the component ellipse:
-        target_group.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=ellipse.F1[2], stroke_width=6, stroke_dashoffset=10, stroke_dasharray='10,10') )
+        for (stripe_dashoffset, stripe_colour) in ( (10, ellipse.F1[2]), (0, ellipse.F2[2]) ):
+            target_group.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10') )
 
-        target_group.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=ellipse.F2[2], stroke_width=6, stroke_dasharray='10,10' ) )
-
-            # invisible part of the component ellipse:
+            # remaining, invisible part of the component ellipse:
         if show_leftovers:
-            target_group.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=ellipse.F1[2], stroke_width=2, stroke_dasharray='5,15' ) )
-            target_group.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=ellipse.F2[2], stroke_width=2, stroke_dasharray='5,15', stroke_dashoffset=10 ) )
+            for (stripe_dashoffset, stripe_colour) in ( (0, ellipse.F1[2]), (10, ellipse.F2[2]) ):
+                target_group.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15') )
 
         if show_tickmarks:
             target_group.add( dwg.circle( center=(B[0],B[1]), r=8, stroke=tick_mark_colour, fill=tick_mark_colour ) )     # "to" tick mark
