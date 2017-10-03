@@ -106,18 +106,22 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
         dwg.add( dwg.circle( center=P[i][0:2], r=5, stroke=P[i][2], stroke_width=2, fill=P[i][2] ) )
         dist_2_prev.append( distance(P[i], P[i-1]) )
 
+        # initialize the first point on the ellipse:
+    ellipse         = Ellipse(P[0], P[1], slack+dist_2_prev[1])
+    cos_for_A       = -three_point_cosine(ellipse.F2, ellipse.F1, P[-1])   # Pprev
+    B               = ellipse.point_on_the_ellipse( cos_for_A, focus_sign=-1 )
+
     for i in range(n):
+        A               = B     # inherit the prev. right limit
             # consecutive foci first:
         ellipse         = Ellipse(P[i], P[i+1-n], slack+dist_2_prev[i+1-n])
-        cos_for_A       = -three_point_cosine(ellipse.F2, ellipse.F1, P[i-1])   # Pprev
-        A               = ellipse.point_on_the_ellipse( cos_for_A, focus_sign=-1 )
         cos_for_B       =  three_point_cosine(ellipse.F1, ellipse.F2, P[i+2-n]) # Pnext
         B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=1 )
         draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=P[i][2])
 
+        A               = B     # inherit the prev. right limit
             # now skip one focus:
         ellipse         = Ellipse(P[i], P[i+2-n], slack+dist_2_prev[i+1-n]+dist_2_prev[i+2-n])
-        A               = B
         cos_for_B       =  three_point_cosine(ellipse.F2, ellipse.F1, P[i+1-n]) # Pnext
         B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=-1 )
         draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=P[i+2-n][2])
