@@ -69,12 +69,12 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
     "Draw a simplified system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
 
     dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
+    target_group    = dwg.g( fill='none' )
 
     def draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=None ):
         "Draw an ellipse fragment given the ellipse and two limits"
 
         tilt_deg        = ellipse.tilt_deg()
-        target_group    = dwg.g( fill='none' )
 
             # visible part of the component ellipse:
         target_group.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=ellipse.F1[2], stroke_width=6, stroke_dashoffset=10, stroke_dasharray='10,10') )
@@ -101,8 +101,6 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
             target_group.add( dwg.line( start=ellipse.F1[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
             target_group.add( dwg.line( start=ellipse.F2[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
 
-        dwg.add( target_group )
-
     dist_2_prev = []
     n           = len(P)
     for i in range(n):
@@ -125,6 +123,7 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
         B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=-1 )
         draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=P[i+2-n][2])
 
+    dwg.add( target_group )
     dwg.save()
 
 if __name__ == '__main__':
