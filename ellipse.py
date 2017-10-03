@@ -106,25 +106,48 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
         dwg.add( dwg.circle( center=P[i][0:2], r=5, stroke=P[i][2], stroke_width=2, fill=P[i][2] ) )
         dist_2_prev.append( distance(P[i], P[i-1]) )
 
-        # initialize the first point on the ellipse:
-    ellipse         = Ellipse(P[0], P[1], slack+dist_2_prev[1])
-    cos_for_A       = -three_point_cosine(ellipse.F2, ellipse.F1, P[-1])   # Pprev
-    B               = ellipse.point_on_the_ellipse( cos_for_A, focus_sign=-1 )
 
-    for i in range(n):
-        A               = B     # inherit the prev. right limit
-            # consecutive foci first:
-        ellipse         = Ellipse(P[i], P[i+1-n], slack+dist_2_prev[i+1-n])
-        cos_for_B       =  three_point_cosine(ellipse.F1, ellipse.F2, P[i+2-n]) # Pnext
+        # find the first proper fragment:
+    l       = 0
+    l_next  = 1
+    r       = 1
+    d       = slack
+    while True:
+        d              += dist_2_prev[r]
+        r_next          = (r+1) % n
+        ellipse         = Ellipse(P[l], P[r], d)
+        cos_for_A       = -three_point_cosine(P[r], P[l], P[l-1])
+        A               = ellipse.point_on_the_ellipse( cos_for_A, focus_sign=-1 )
+        if points_are_clockwise(A, P[r], P[r_next]):
+            break
+        else:
+            r   = r_next
+
+        # walk over all the fragments until we attempt to create the first fragment again:
+    while l!=0 or l_next!=0:
+        ellipse         = Ellipse(P[l], P[r], d)
+        l_next          = (l+1) % n
+        r_next          = (r+1) % n
+        cos_for_B       =  three_point_cosine(P[l], P[r], P[r_next])
         B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=1 )
-        draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=P[i][2])
+        cos_of_B_rel_F1 =  three_point_cosine(B, P[l], P[r])
 
-        A               = B     # inherit the prev. right limit
-            # now skip one focus:
-        ellipse         = Ellipse(P[i], P[i+2-n], slack+dist_2_prev[i+1-n]+dist_2_prev[i+2-n])
-        cos_for_B       =  three_point_cosine(ellipse.F2, ellipse.F1, P[i+1-n]) # Pnext
-        B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=-1 )
-        draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=P[i+2-n][2])
+        cos_for_A2      =  three_point_cosine(P[r], P[l], P[l_next])
+        A2              = ellipse.point_on_the_ellipse( cos_for_A2, focus_sign=-1 )
+
+            # compare two right limit candidates and choose the one with greater angle => smaller cosine:
+        if cos_for_A2 < cos_of_B_rel_F1:
+            tmc = P[r][2]
+            B   = A2
+            l   = l_next
+            d  -= dist_2_prev[l]
+        else:
+            tmc = P[l][2]
+            r   = r_next
+            d  += dist_2_prev[r]
+
+        draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=tmc )
+        A   = B     # next iteration inherits the current one's right limit for its left
 
     dwg.add( target_group )
     dwg.save()
