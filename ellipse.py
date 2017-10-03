@@ -137,12 +137,12 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
 
             # compare two right limit candidates and choose the one with greater angle => smaller cosine:
         if cos_for_A2 < cos_of_B_rel_F1:
-            tmc = P[r][2]
             B   = A2
             l   = l_next
             d  -= dist_2_prev[l]
-        else:
             tmc = P[l][2]
+        else:
+            tmc = P[r][2]
             r   = r_next
             d  += dist_2_prev[r]
 
@@ -161,6 +161,10 @@ if __name__ == '__main__':
     draw_ellipsystem([P1, P2, P4], show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
     draw_ellipsystem([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg')
     draw_ellipsystem([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg')
+
+    draw_ellipsystem([ (400,400,'red'), (600,400,'orange'), (650,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
+                       (450,600,'blue'), (380,520,'purple')
+                     ], slack=100, filename='examples/seven_foci_without_leftovers.svg')
 
 #    draw_ellipsystem([P1, P2, P4], filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
 #    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[1, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
