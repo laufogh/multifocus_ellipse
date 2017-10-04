@@ -37,7 +37,7 @@ def points_are_clockwise(P1, P2, P3):
 def turn_and_scale(Z, D, cos_f, rho):
     "Relative to centre Z and axis ZD, find the point A in polar coordinates (phi,rho) and map it to Cartesian"
 
-    sin_f       = math.sqrt(1 - cos_f**2)
+    sin_f       = math.sqrt(abs(1.0 - cos_f**2))    # abs() is needed in the rarest of cases when cos_f *seems* to go over 1.0
     ZD_length   = distance(Z, D)
     U_x         = (D[0]-Z[0])/ZD_length
     U_y         = (D[1]-Z[1])/ZD_length
@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     draw_ellipsystem([ (400,400,'red'), (600,400,'orange'), (650,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
                        (450,600,'blue'), (380,520,'purple')
-                     ], slack=100, filename='examples/seven_foci_without_leftovers.svg')
+                     ], slack=50, filename='examples/seven_foci_without_leftovers.svg')
 
 #    draw_ellipsystem([P1, P2, P4], filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
 #    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[1, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
