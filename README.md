@@ -16,6 +16,6 @@ For 4 non-collinear foci the resulting curve looks like this:
 It is a smooth combination of 8 elliptical fragments, each built on two foci out of four:
 ![Four-foci ellipse with leftovers](examples/four_foci_with_leftovers.svg "Four-foci ellipse with leftovers")
 
-The following drawing shows the effect of different amount of slack in the loop, ranging from "almost a triangle" to "almost a circle":
-![Seven-foci ellipse with different slacks](examples/seven_foci_different_slacks.svg "Seven-foci ellipse with different slacks")
+The following drawing shows the effect of different amount of slack in the loop, ranging from "almost a polygon" to "almost a circle":
+![Multi-focus ellipses with different slacks](examples/seven_foci_different_slacks.svg "Multi-focus ellipses with different slacks")
 

@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     draw_ellipsystem([ (400,400,'red'), (600,400,'orange'), (700,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
                        (450,600,'blue'), (380,520,'purple')
-                     ], slacks=[1, 20, 50, 100, 200, 400], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg')
+                     ], slacks=[25, 50, 100, 200, 400], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg')
 
 #    draw_ellipsystem([P1, P2, P4], filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
 
