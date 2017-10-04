@@ -30,7 +30,7 @@ def sign(x):
     "Amusingly, Python doesn't have a native sign() function"
     return (x>0)-(x<0)
 
-def points_are_clockwise(P1, P2, P3):
+def clockwiseness_of_points(P1, P2, P3):
     "Detect whether the points are ordered clockwise (1), collinear (0) or counter-clockwise(-1)"
     return  sign((P2[0]-P1[0])*(P3[1]-P1[1])-(P2[1]-P1[1])*(P3[0]-P1[0]))
 
@@ -65,7 +65,7 @@ class Ellipse:
         return math.degrees( math.atan2(self.F2[1]-self.F1[1], self.F2[0]-self.F1[0]) )
 
 
-def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000), pencil_mark_fraction=None):
+def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000), pencil_mark_fraction=None):
     "Draw a simplified system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
 
     dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
@@ -106,48 +106,48 @@ def draw_ellipsystem(P, slack=250, show_leftovers=False, show_tickmarks=True, fi
         dwg.add( dwg.circle( center=P[i][0:2], r=5, stroke=P[i][2], stroke_width=2, fill=P[i][2] ) )
         dist_2_prev.append( distance(P[i], P[i-1]) )
 
+    for slack in slacks:
+            # find the first proper fragment:
+        l       = 0
+        l_next  = 1
+        r       = 1
+        d       = slack
+        while True:
+            d              += dist_2_prev[r]
+            r_next          = (r+1) % n
+            ellipse         = Ellipse(P[l], P[r], d)
+            cos_for_A       = -three_point_cosine(P[r], P[l], P[l-1])
+            A               = ellipse.point_on_the_ellipse( cos_for_A, focus_sign=-1 )
+            if clockwiseness_of_points(A, P[r], P[r_next])==1:
+                break
+            else:
+                r   = r_next
 
-        # find the first proper fragment:
-    l       = 0
-    l_next  = 1
-    r       = 1
-    d       = slack
-    while True:
-        d              += dist_2_prev[r]
-        r_next          = (r+1) % n
-        ellipse         = Ellipse(P[l], P[r], d)
-        cos_for_A       = -three_point_cosine(P[r], P[l], P[l-1])
-        A               = ellipse.point_on_the_ellipse( cos_for_A, focus_sign=-1 )
-        if points_are_clockwise(A, P[r], P[r_next]):
-            break
-        else:
-            r   = r_next
+            # walk over all the fragments until we attempt to create the first fragment again:
+        while l!=0 or l_next!=0:
+            ellipse         = Ellipse(P[l], P[r], d)
+            l_next          = (l+1) % n
+            r_next          = (r+1) % n
+            cos_for_B       =  three_point_cosine(P[l], P[r], P[r_next])
+            B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=1 )
+            cos_of_B_rel_F1 =  three_point_cosine(B, P[l], P[r])
 
-        # walk over all the fragments until we attempt to create the first fragment again:
-    while l!=0 or l_next!=0:
-        ellipse         = Ellipse(P[l], P[r], d)
-        l_next          = (l+1) % n
-        r_next          = (r+1) % n
-        cos_for_B       =  three_point_cosine(P[l], P[r], P[r_next])
-        B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=1 )
-        cos_of_B_rel_F1 =  three_point_cosine(B, P[l], P[r])
+            cos_for_A2      =  three_point_cosine(P[r], P[l], P[l_next])
+            A2              = ellipse.point_on_the_ellipse( cos_for_A2, focus_sign=-1 )
 
-        cos_for_A2      =  three_point_cosine(P[r], P[l], P[l_next])
-        A2              = ellipse.point_on_the_ellipse( cos_for_A2, focus_sign=-1 )
+                # compare two right limit candidates and choose the one with greater angle => smaller cosine:
+            if cos_for_A2 < cos_of_B_rel_F1:
+                B   = A2
+                l   = l_next
+                d  -= dist_2_prev[l]
+                tmc = P[l][2]
+            else:
+                tmc = P[r][2]
+                r   = r_next
+                d  += dist_2_prev[r]
 
-            # compare two right limit candidates and choose the one with greater angle => smaller cosine:
-        if cos_for_A2 < cos_of_B_rel_F1:
-            B   = A2
-            l   = l_next
-            d  -= dist_2_prev[l]
-            tmc = P[l][2]
-        else:
-            tmc = P[r][2]
-            r   = r_next
-            d  += dist_2_prev[r]
-
-        draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=tmc )
-        A   = B     # next iteration inherits the current one's right limit for its left
+            draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=tmc )
+            A   = B     # next iteration inherits the current one's right limit for its left
 
     dwg.add( target_group )
     dwg.save()
@@ -162,10 +162,9 @@ if __name__ == '__main__':
     draw_ellipsystem([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg')
     draw_ellipsystem([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg')
 
-    draw_ellipsystem([ (400,400,'red'), (600,400,'orange'), (650,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
+    draw_ellipsystem([ (400,400,'red'), (600,400,'orange'), (700,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
                        (450,600,'blue'), (380,520,'purple')
-                     ], slack=50, filename='examples/seven_foci_without_leftovers.svg')
+                     ], slacks=[1, 20, 50, 100, 200, 400], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg')
 
 #    draw_ellipsystem([P1, P2, P4], filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
-#    draw_ellipsystem(P1, P2, P3, show_tickmarks=False, slacks=[1, 10, 50, 150, 250, 500], filename='examples/three_foci_different_slacks.svg')
 

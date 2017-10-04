@@ -17,5 +17,5 @@ It is a smooth combination of 8 elliptical fragments, each built on two foci out
 ![Four-foci ellipse with leftovers](examples/four_foci_with_leftovers.svg "Four-foci ellipse with leftovers")
 
 The following drawing shows the effect of different amount of slack in the loop, ranging from "almost a triangle" to "almost a circle":
-![Three-foci ellipse with different slacks](examples/three_foci_different_slacks.svg "Three-foci ellipse with different slacks")
+![Seven-foci ellipse with different slacks](examples/seven_foci_different_slacks.svg "Seven-foci ellipse with different slacks")
 
