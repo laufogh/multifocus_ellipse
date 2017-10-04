@@ -71,7 +71,7 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
     dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
     target_group    = dwg.g( fill='none' )
 
-    def draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=None ):
+    def draw_ellipse_fragment( ellipse, A, B, tick_parent ):
         "Draw an ellipse fragment given the ellipse and two limits"
 
         tilt_deg        = ellipse.tilt_deg()
@@ -86,7 +86,9 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
                 target_group.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15') )
 
         if show_tickmarks:
-            target_group.add( dwg.circle( center=(B[0],B[1]), r=8, stroke=tick_mark_colour, fill=tick_mark_colour ) )     # "to" tick mark
+            from_tick   = turn_and_scale(B, tick_parent, 1,  10)
+            to_tick     = turn_and_scale(B, tick_parent, 1, -10)
+            target_group.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent[2], fill=tick_parent[2], stroke_width=6, stroke_linecap='round' ) )
 
         if pencil_mark_fraction is not None:
                 # find the angles relative to ellipse.F1 in local coordinates:
@@ -140,13 +142,13 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
                 B   = A2
                 l   = l_next
                 d  -= dist_2_prev[l]
-                tmc = P[l][2]
+                tick_parent = P[l]
             else:
-                tmc = P[r][2]
+                tick_parent = P[r]
                 r   = r_next
                 d  += dist_2_prev[r]
 
-            draw_ellipse_fragment( ellipse, A, B, tick_mark_colour=tmc )
+            draw_ellipse_fragment( ellipse, A, B, tick_parent )
             A   = B     # next iteration inherits the current one's right limit for its left
 
     dwg.add( target_group )
