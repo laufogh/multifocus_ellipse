@@ -69,7 +69,6 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
     "Draw a simplified system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
 
     dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
-    target_group    = dwg.g( fill='none' )
 
     def draw_ellipse_fragment( ellipse, A, B, tick_parent ):
         "Draw an ellipse fragment given the ellipse and two limits"
@@ -78,17 +77,17 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
 
             # visible part of the component ellipse:
         for (stripe_dashoffset, stripe_colour) in ( (10, ellipse.F1[2]), (0, ellipse.F2[2]) ):
-            target_group.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10') )
+            dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
 
             # remaining, invisible part of the component ellipse:
         if show_leftovers:
             for (stripe_dashoffset, stripe_colour) in ( (0, ellipse.F1[2]), (10, ellipse.F2[2]) ):
-                target_group.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15') )
+                dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
 
         if show_tickmarks:
             from_tick   = turn_and_scale(B, tick_parent, 1,  10)
             to_tick     = turn_and_scale(B, tick_parent, 1, -10)
-            target_group.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent[2], fill=tick_parent[2], stroke_width=6, stroke_linecap='round' ) )
+            dwg.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent[2], fill=tick_parent[2], stroke_width=6, stroke_linecap='round' ) )
 
         if pencil_mark_fraction is not None:
                 # find the angles relative to ellipse.F1 in local coordinates:
@@ -98,9 +97,9 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
             mix     = gamma * (1-pencil_mark_fraction) + delta * pencil_mark_fraction
             (Mx,My) = point_on_the_ellipse( math.cos( mix ) )
 
-            target_group.add( dwg.circle( center=(Mx,My), r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
-            target_group.add( dwg.line( start=ellipse.F1[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
-            target_group.add( dwg.line( start=ellipse.F2[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
+            dwg.add( dwg.circle( center=(Mx,My), r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
+            dwg.add( dwg.line( start=ellipse.F1[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
+            dwg.add( dwg.line( start=ellipse.F2[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
 
     dist_2_prev = []
     n           = len(P)
@@ -151,7 +150,6 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
             draw_ellipse_fragment( ellipse, A, B, tick_parent )
             A   = B     # next iteration inherits the current one's right limit for its left
 
-    dwg.add( target_group )
     dwg.save()
 
 if __name__ == '__main__':
