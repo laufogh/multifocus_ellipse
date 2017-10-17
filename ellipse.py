@@ -57,49 +57,55 @@ class Ellipse:
         self.b  = math.sqrt( self.a**2 - self.c**2 )
 
     def point_on_the_ellipse(self, cos_f, focus_sign=-1):
+        "Return a Cartesian point on the ellipse given polar cosine; focus_sign==-1|1 means relative to first|second focus"
+
         rho     = self.b**2 / (self.a + focus_sign * self.c * cos_f)
         (Z, D)  = (self.F1, self.F2) if focus_sign==-1 else (self.F2, self.F1)
         return turn_and_scale(Z, D, cos_f, -focus_sign*rho)
 
     def tilt_deg(self):
+        "Return the tilt of the ellipse in degrees"
+
         return math.degrees( math.atan2(self.F2[1]-self.F1[1], self.F2[0]-self.F1[0]) )
+
+    def draw_ellipse_fragment( self, dwg, A, B, tick_parent, show_leftovers=False ):
+        "Draw an ellipse fragment given two limits"
+
+        tilt_deg        = self.tilt_deg()
+
+            # visible part of the component ellipse:
+        for (stripe_dashoffset, stripe_colour) in ( (10, self.F1[2]), (0, self.F2[2]) ):
+            dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
+
+            # remaining, invisible part of the component ellipse:
+        if show_leftovers:
+            for (stripe_dashoffset, stripe_colour) in ( (0, self.F1[2]), (10, self.F2[2]) ):
+                dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
+
+        if tick_parent:
+            from_tick   = turn_and_scale(B, tick_parent, 1,  10)
+            to_tick     = turn_and_scale(B, tick_parent, 1, -10)
+            dwg.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent[2], fill=tick_parent[2], stroke_width=6, stroke_linecap='round' ) )
+
+    def draw_a_pencil_mark( self, dwg, A, B, pencil_mark_fraction ):
+        "Draw a pencil mark given a fraction 0..1 that defines the convex combination"
+
+            # find the angles relative to ellipse.F1 in local coordinates:
+        gamma   = math.acos( three_point_cosine(self.F2, self.F1, (A[0],A[1])) )
+        delta   = math.acos( three_point_cosine(self.F2, self.F1, (B[0],B[1])) )
+            # now we can create any convex combination and map it onto the corresponding ellipse fragment:
+        mix     = gamma * (1-pencil_mark_fraction) + delta * pencil_mark_fraction
+        (Mx,My) = point_on_the_ellipse( math.cos( mix ) )
+
+        dwg.add( dwg.circle( center=(Mx,My), r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
+        dwg.add( dwg.line( start=self.F1[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
+        dwg.add( dwg.line( start=self.F2[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
 
 
 def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000), pencil_mark_fraction=None):
     "Draw a simplified system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
 
-    dwg             = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
-
-    def draw_ellipse_fragment( ellipse, A, B, tick_parent ):
-        "Draw an ellipse fragment given the ellipse and two limits"
-
-        tilt_deg        = ellipse.tilt_deg()
-
-            # visible part of the component ellipse:
-        for (stripe_dashoffset, stripe_colour) in ( (10, ellipse.F1[2]), (0, ellipse.F2[2]) ):
-            dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
-
-            # remaining, invisible part of the component ellipse:
-        if show_leftovers:
-            for (stripe_dashoffset, stripe_colour) in ( (0, ellipse.F1[2]), (10, ellipse.F2[2]) ):
-                dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], ellipse.a, ellipse.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
-
-        if show_tickmarks:
-            from_tick   = turn_and_scale(B, tick_parent, 1,  10)
-            to_tick     = turn_and_scale(B, tick_parent, 1, -10)
-            dwg.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent[2], fill=tick_parent[2], stroke_width=6, stroke_linecap='round' ) )
-
-        if pencil_mark_fraction is not None:
-                # find the angles relative to ellipse.F1 in local coordinates:
-            gamma   = math.acos( three_point_cosine(ellipse.F2, ellipse.F1, (A[0],A[1])) )
-            delta   = math.acos( three_point_cosine(ellipse.F2, ellipse.F1, (B[0],B[1])) )
-                # now we can create any convex combination and map it onto the corresponding ellipse fragment:
-            mix     = gamma * (1-pencil_mark_fraction) + delta * pencil_mark_fraction
-            (Mx,My) = point_on_the_ellipse( math.cos( mix ) )
-
-            dwg.add( dwg.circle( center=(Mx,My), r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
-            dwg.add( dwg.line( start=ellipse.F1[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
-            dwg.add( dwg.line( start=ellipse.F2[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
+    dwg         = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
 
     dist_2_prev = []
     n           = len(P)
@@ -147,7 +153,10 @@ def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True,
                 r   = r_next
                 d  += dist_2_prev[r]
 
-            draw_ellipse_fragment( ellipse, A, B, tick_parent )
+            if not show_tickmarks:
+                tick_parent = False
+
+            ellipse.draw_ellipse_fragment( dwg, A, B, tick_parent, show_leftovers=show_leftovers )
             A   = B     # next iteration inherits the current one's right limit for its left
 
     dwg.save()
