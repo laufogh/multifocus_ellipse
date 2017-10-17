@@ -102,78 +102,110 @@ class Ellipse:
         dwg.add( dwg.line( start=self.F2[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
 
 
-def draw_ellipsystem(P, slacks=[250], show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000), pencil_mark_fraction=None):
-    "Draw a simplified system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
+class MultiEllipse:
+    "Stores parameters of a MultiEllipse and provides a method to draw it"
 
-    dwg         = svgwrite.Drawing(filename=filename, debug=True, size=canvas_size)
+    def __init__(self, P, show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000)):
+        self.P              = P
+        self.show_leftovers = show_leftovers
+        self.show_tickmarks = show_tickmarks
+        self.filename       = filename
+        self.canvas_size    = canvas_size
+        self.dist_2_prev    = []
+        self.n              = len(P)
+        for i in range(self.n):
+            self.dist_2_prev.append( distance(P[i], P[i-1]) )
 
-    dist_2_prev = []
-    n           = len(P)
-    for i in range(n):
-        dwg.add( dwg.circle( center=P[i][0:2], r=5, stroke=P[i][2], stroke_width=2, fill=P[i][2] ) )
-        dist_2_prev.append( distance(P[i], P[i-1]) )
+    def draw_foci(self):
+        "Create the Drawing object and draw the foci"
 
-    for slack in slacks:
+        self.dwg    = svgwrite.Drawing(filename=self.filename, size=self.canvas_size, debug=True)
+
+        for i in range(self.n):
+            self.dwg.add( self.dwg.circle( center=self.P[i][0:2], r=5, stroke=self.P[i][2], stroke_width=2, fill=self.P[i][2] ) )
+
+    def draw_with_slack(self, slack):
+        "Draw a system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
+
             # find the first proper fragment:
         l       = 0
         l_next  = 1
         r       = 1
         d       = slack
         while True:
-            d              += dist_2_prev[r]
-            r_next          = (r+1) % n
-            ellipse         = Ellipse(P[l], P[r], d)
-            cos_for_A       = -three_point_cosine(P[r], P[l], P[l-1])
+            d              += self.dist_2_prev[r]
+            r_next          = (r+1) % self.n
+            ellipse         = Ellipse(self.P[l], self.P[r], d)
+            cos_for_A       = -three_point_cosine(self.P[r], self.P[l], self.P[l-1])
             A               = ellipse.point_on_the_ellipse( cos_for_A, focus_sign=-1 )
-            if clockwiseness_of_points(A, P[r], P[r_next])==1:
+            if clockwiseness_of_points(A, self.P[r], self.P[r_next])==1:
                 break
             else:
                 r   = r_next
 
+        fragments   = 0
+
             # walk over all the fragments until we attempt to create the first fragment again:
         while l!=0 or l_next!=0:
-            ellipse         = Ellipse(P[l], P[r], d)
-            l_next          = (l+1) % n
-            r_next          = (r+1) % n
-            cos_for_B       =  three_point_cosine(P[l], P[r], P[r_next])
+            ellipse         = Ellipse(self.P[l], self.P[r], d)
+            l_next          = (l+1) % self.n
+            r_next          = (r+1) % self.n
+            cos_for_B       =  three_point_cosine(self.P[l], self.P[r], self.P[r_next])
             B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=1 )
-            cos_of_B_rel_F1 =  three_point_cosine(B, P[l], P[r])
+            cos_of_B_rel_F1 =  three_point_cosine(B, self.P[l], self.P[r])
 
-            cos_for_A2      =  three_point_cosine(P[r], P[l], P[l_next])
+            cos_for_A2      =  three_point_cosine(self.P[r], self.P[l], self.P[l_next])
             A2              = ellipse.point_on_the_ellipse( cos_for_A2, focus_sign=-1 )
 
                 # compare two right limit candidates and choose the one with greater angle => smaller cosine:
             if cos_for_A2 < cos_of_B_rel_F1:
                 B   = A2
                 l   = l_next
-                d  -= dist_2_prev[l]
-                tick_parent = P[l]
+                d  -= self.dist_2_prev[l]
+                tick_parent = self.P[l]
             else:
-                tick_parent = P[r]
+                tick_parent = self.P[r]
                 r   = r_next
-                d  += dist_2_prev[r]
+                d  += self.dist_2_prev[r]
 
-            if not show_tickmarks:
+            if not self.show_tickmarks:
                 tick_parent = False
 
-            ellipse.draw_ellipse_fragment( dwg, A, B, tick_parent, show_leftovers=show_leftovers )
-            A   = B     # next iteration inherits the current one's right limit for its left
+            ellipse.draw_ellipse_fragment( self.dwg, A, B, tick_parent, show_leftovers=self.show_leftovers )
+            fragments   += 1
+            A = B     # next iteration inherits the current one's right limit for its left
 
-    dwg.save()
+        return fragments
+
+
+    def draw(self, slack=250):
+
+        self.draw_foci()
+        self.draw_with_slack(slack=slack)
+        self.dwg.save()
+
+    def draw_parallel(self, slacks):
+
+        self.draw_foci()
+
+        for slack in slacks:
+            self.draw_with_slack(slack)
+
+        self.dwg.save()
 
 if __name__ == '__main__':
     P1              = (400, 500, 'red')
     P2              = (600, 400, 'orange')
     P3              = (600, 700, 'purple')
     P4              = (500, 700, 'green')
-    draw_ellipsystem([P1, P2, P4], filename='examples/three_foci_without_leftovers.svg')
-    draw_ellipsystem([P1, P2, P4], show_leftovers=True, filename='examples/three_foci_with_leftovers.svg')
-    draw_ellipsystem([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg')
-    draw_ellipsystem([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg')
+    MultiEllipse([P1, P2, P4], filename='examples/three_foci_without_leftovers.svg').draw()
+    MultiEllipse([P1, P2, P4], show_leftovers=True, filename='examples/three_foci_with_leftovers.svg').draw()
+    MultiEllipse([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg').draw()
+    MultiEllipse([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg').draw()
 
-    draw_ellipsystem([ (400,400,'red'), (600,400,'orange'), (700,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
+    MultiEllipse([ (400,400,'red'), (600,400,'orange'), (700,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
                        (450,600,'blue'), (380,520,'purple')
-                     ], slacks=[25, 50, 100, 200, 400], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg')
+                     ], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
 
-#    draw_ellipsystem([P1, P2, P4], filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1)
+#    MultiEllipse([P1, P2, P4], filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1).draw()
 
