@@ -9,6 +9,7 @@
 
 import math
 import svgwrite
+import re
 
 def distance(P1, P2):
     "Find the distance between two 2D points"
@@ -116,10 +117,11 @@ class MultiEllipse:
         for i in range(self.n):
             self.dist_2_prev.append( distance(P[i], P[i-1]) )
 
-    def draw_foci(self):
+    def draw_foci(self, fragment_index=0):
         "Create the Drawing object and draw the foci"
 
-        self.dwg    = svgwrite.Drawing(filename=self.filename, size=self.canvas_size, debug=True)
+        filename    = (self.filename % fragment_index) if re.search('%', self.filename) else self.filename
+        self.dwg    = svgwrite.Drawing(filename=filename, size=self.canvas_size, debug=True)
 
         for i in range(self.n):
             self.dwg.add( self.dwg.circle( center=self.P[i][0:2], r=5, stroke=self.P[i][2], stroke_width=2, fill=self.P[i][2] ) )
@@ -196,11 +198,21 @@ class MultiEllipse:
 
         self.dwg.save()
 
-    def draw_with_pencil_marks(self, slack=250, pencil_mark_fragment=0, pencil_mark_fraction=0.1):
+    def draw_with_pencil_marks(self, slack=250):
 
-        self.draw_foci()
-        self.draw_with_slack(slack=slack, pencil_mark_fragment=pencil_mark_fragment, pencil_mark_fraction=pencil_mark_fraction)
+        self.draw_foci(0)
+        fragments = self.draw_with_slack(slack=slack)
         self.dwg.save()
+
+        subfragments    = 10
+
+        for fragment_index in range(fragments):
+            for subfragment_index in range(subfragments):
+                combined_index = fragment_index * subfragments + subfragment_index + 1
+                self.draw_foci(combined_index)
+                self.draw_with_slack(slack=slack, pencil_mark_fragment=fragment_index,
+                                     pencil_mark_fraction=(subfragment_index+0.5)/subfragments)
+                self.dwg.save()
 
 if __name__ == '__main__':
     P1              = (400, 500, 'red')
@@ -216,5 +228,7 @@ if __name__ == '__main__':
                        (450,600,'blue'), (380,520,'purple')
                      ], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
 
-#    MultiEllipse([P1, P2, P4], filename='examples/pencil_mark.svg').draw_with_pencil_marks(pencil_mark_fragment=2)
+    # MultiEllipse([P1, P2, P4], filename='pencil_mark_%02d.svg').draw_with_pencil_marks()
+    #
+    # convert -loop 0 -dispose Background -delay 5 pencil_mark_*.svg pencil_marks.gif
 
