@@ -95,7 +95,7 @@ class Ellipse:
         delta   = math.acos( three_point_cosine(self.F2, self.F1, (B[0],B[1])) )
             # now we can create any convex combination and map it onto the corresponding ellipse fragment:
         mix     = gamma * (1-pencil_mark_fraction) + delta * pencil_mark_fraction
-        (Mx,My) = point_on_the_ellipse( math.cos( mix ) )
+        (Mx,My) = self.point_on_the_ellipse( math.cos( mix ) )
 
         dwg.add( dwg.circle( center=(Mx,My), r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
         dwg.add( dwg.line( start=self.F1[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
@@ -124,7 +124,7 @@ class MultiEllipse:
         for i in range(self.n):
             self.dwg.add( self.dwg.circle( center=self.P[i][0:2], r=5, stroke=self.P[i][2], stroke_width=2, fill=self.P[i][2] ) )
 
-    def draw_with_slack(self, slack):
+    def draw_with_slack(self, slack, pencil_mark_fragment=-1, pencil_mark_fraction=0.1):
         "Draw a system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
 
             # find the first proper fragment:
@@ -172,6 +172,9 @@ class MultiEllipse:
                 tick_parent = False
 
             ellipse.draw_ellipse_fragment( self.dwg, A, B, tick_parent, show_leftovers=self.show_leftovers )
+            if pencil_mark_fragment == fragments:
+                ellipse.draw_a_pencil_mark( self.dwg, A, B, pencil_mark_fraction )
+
             fragments   += 1
             A = B     # next iteration inherits the current one's right limit for its left
 
@@ -193,6 +196,12 @@ class MultiEllipse:
 
         self.dwg.save()
 
+    def draw_with_pencil_marks(self, slack=250, pencil_mark_fragment=0, pencil_mark_fraction=0.1):
+
+        self.draw_foci()
+        self.draw_with_slack(slack=slack, pencil_mark_fragment=pencil_mark_fragment, pencil_mark_fraction=pencil_mark_fraction)
+        self.dwg.save()
+
 if __name__ == '__main__':
     P1              = (400, 500, 'red')
     P2              = (600, 400, 'orange')
@@ -207,5 +216,5 @@ if __name__ == '__main__':
                        (450,600,'blue'), (380,520,'purple')
                      ], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
 
-#    MultiEllipse([P1, P2, P4], filename='examples/pencil_mark.svg', pencil_mark_fraction=0.1).draw()
+#    MultiEllipse([P1, P2, P4], filename='examples/pencil_mark.svg').draw_with_pencil_marks(pencil_mark_fragment=2)
 
