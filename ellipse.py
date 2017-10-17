@@ -10,6 +10,7 @@
 import math
 import svgwrite
 import re
+import os
 
 def distance(P1, P2):
     "Find the distance between two 2D points"
@@ -228,7 +229,6 @@ if __name__ == '__main__':
                        (450,600,'blue'), (380,520,'purple')
                      ], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
 
-    # MultiEllipse([P1, P2, P4], filename='pencil_mark_%02d.svg').draw_with_pencil_marks()
-    #
-    # convert -loop 0 -dispose Background -delay 5 pencil_mark_*.svg pencil_marks.gif
+#    MultiEllipse([P1, P2, P4], filename='pencil_mark_%02d.svg').draw_with_pencil_marks()
+#    os.system('convert -loop 0 -dispose Background -delay 5 pencil_mark_*.svg examples/running_pencil_animation.gif')
 

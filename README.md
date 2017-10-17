@@ -10,6 +10,9 @@ For 3 non-collinear foci the resulting curve looks like this:
 It is in fact a smooth combination of 6 elliptical fragments, each built on just two foci out of three:
 ![Three-foci ellipse with leftovers](examples/three_foci_with_leftovers.svg "Three-foci ellipse with leftovers")
 
+Animation of a running pencil in a string loop:
+![Three-foci pencil animation](examples/running_pencil_animation.gif "Three-foci pencil animation")
+
 For 4 non-collinear foci the resulting curve looks like this:
 ![Four-foci ellipse example](examples/four_foci_without_leftovers.svg "Four-foci ellipse example")
 
