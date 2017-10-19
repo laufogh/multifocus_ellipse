@@ -124,8 +124,16 @@ class MultiEllipse:
         filename    = (self.filename % fragment_index) if re.search('%', self.filename) else self.filename
         self.dwg    = svgwrite.Drawing(filename=filename, size=self.canvas_size, debug=True)
 
+        print("Creating %s ..." % filename)
+
         for i in range(self.n):
             self.dwg.add( self.dwg.circle( center=self.P[i][0:2], r=5, stroke=self.P[i][2], stroke_width=2, fill=self.P[i][2] ) )
+
+    def draw_rest_of_rope(self, l, r):
+        "Draw the rest of the rope loop (between P[r] and P[l])"
+
+        for i in range(r-self.n if l<r else r, l):
+            self.dwg.add( self.dwg.line( start=self.P[i][0:2], end=self.P[i+1][0:2], stroke='blue', stroke_width=1  ) )
 
     def draw_with_slack(self, slack, pencil_mark_fragment=-1, pencil_mark_fraction=0.1):
         "Draw a system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
@@ -150,6 +158,9 @@ class MultiEllipse:
 
             # walk over all the fragments until we attempt to create the first fragment again:
         while l!=0 or l_next!=0:
+            if pencil_mark_fragment == fragments:
+                self.draw_rest_of_rope( l, r )
+
             ellipse         = Ellipse(self.P[l], self.P[r], d)
             l_next          = (l+1) % self.n
             r_next          = (r+1) % self.n
