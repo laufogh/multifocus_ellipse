@@ -11,6 +11,19 @@ import math
 import svgwrite
 import re
 import os
+import numpy as np
+
+class ColouredPoint(np.ndarray):
+    "A (numpy) point that has both coordinates and colour"
+
+    def __new__(cls, input_array, colour='grey'):
+        coloured_point = np.asarray(input_array).view(cls)
+        coloured_point.colour = colour
+        return coloured_point
+
+    def __array_finalize__(self, coloured_point):
+        if coloured_point is None: return
+        self.info = getattr(coloured_point, 'colour', None)
 
 def distance(P1, P2):
     "Find the distance between two 2D points"
@@ -76,18 +89,18 @@ class Ellipse:
         tilt_deg        = self.tilt_deg()
 
             # visible part of the component ellipse:
-        for (stripe_dashoffset, stripe_colour) in ( (10, self.F1[2]), (0, self.F2[2]) ):
+        for (stripe_dashoffset, stripe_colour) in ( (10, self.F1.colour), (0, self.F2.colour) ):
             dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
 
             # remaining, invisible part of the component ellipse:
         if show_leftovers:
-            for (stripe_dashoffset, stripe_colour) in ( (0, self.F1[2]), (10, self.F2[2]) ):
+            for (stripe_dashoffset, stripe_colour) in ( (0, self.F1.colour), (10, self.F2.colour) ):
                 dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
 
-        if tick_parent:
+        if tick_parent is not None:
             from_tick   = turn_and_scale(B, tick_parent, 1,  10)
             to_tick     = turn_and_scale(B, tick_parent, 1, -10)
-            dwg.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent[2], fill=tick_parent[2], stroke_width=6, stroke_linecap='round' ) )
+            dwg.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent.colour, fill=tick_parent.colour, stroke_width=6, stroke_linecap='round' ) )
 
     def draw_a_pencil_mark( self, dwg, A, B, pencil_mark_fraction ):
         "Draw a pencil mark given a fraction 0..1 that defines the convex combination"
@@ -127,7 +140,7 @@ class MultiEllipse:
         print("Creating %s ..." % filename)
 
         for i in range(self.n):
-            self.dwg.add( self.dwg.circle( center=self.P[i][0:2], r=5, stroke=self.P[i][2], stroke_width=2, fill=self.P[i][2] ) )
+            self.dwg.add( self.dwg.circle( center=self.P[i].tolist(), r=5, stroke=self.P[i].colour, stroke_width=2, fill=self.P[i].colour ) )
 
     def draw_rest_of_rope(self, l, r):
         "Draw the rest of the rope loop (between P[r] and P[l])"
@@ -183,7 +196,7 @@ class MultiEllipse:
                 d  += self.dist_2_prev[r]
 
             if not self.show_tickmarks:
-                tick_parent = False
+                tick_parent = None
 
             ellipse.draw_ellipse_fragment( self.dwg, A, B, tick_parent, show_leftovers=self.show_leftovers )
             if pencil_mark_fragment == fragments:
@@ -227,18 +240,24 @@ class MultiEllipse:
                 self.dwg.save()
 
 if __name__ == '__main__':
-    P1              = (400, 500, 'red')
-    P2              = (600, 400, 'orange')
-    P3              = (600, 700, 'purple')
-    P4              = (500, 700, 'green')
+    P1              = ColouredPoint( [400, 500], colour='red' )
+    P2              = ColouredPoint( [600, 400], colour='orange' )
+    P3              = ColouredPoint( [600, 700], colour='purple' )
+    P4              = ColouredPoint( [500, 700], colour='green' )
+
     MultiEllipse([P1, P2, P4], filename='examples/three_foci_without_leftovers.svg').draw()
     MultiEllipse([P1, P2, P4], show_leftovers=True, filename='examples/three_foci_with_leftovers.svg').draw()
     MultiEllipse([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg').draw()
     MultiEllipse([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg').draw()
-
-    MultiEllipse([ (400,400,'red'), (600,400,'orange'), (700,450,'yellow'), (650,520,'green'), (530,620,'cyan'),
-                       (450,600,'blue'), (380,520,'purple')
-                     ], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
+    MultiEllipse([
+            ColouredPoint( [400,400], colour='red'),
+            ColouredPoint( [600,400], colour='orange'),
+            ColouredPoint( [700,450], colour='yellow'),
+            ColouredPoint( [650,520], colour='green'),
+            ColouredPoint( [530,620], colour='cyan'),
+            ColouredPoint( [450,600], colour='blue'),
+            ColouredPoint( [380,520], colour='purple')
+        ], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
 
 #    MultiEllipse([P1, P2, P4], filename='pencil_mark_%02d.svg').draw_with_pencil_marks()
 #    os.system('convert -loop 0 -dispose Background -delay 5 pencil_mark_*.svg examples/running_pencil_animation.gif')
