@@ -26,40 +26,24 @@ class ColouredPoint(np.ndarray):
         self.info = getattr(coloured_point, 'colour', None)
 
 def distance(P1, P2):
-    "Find the distance between two 2D points"
-    return math.sqrt( (P2[0]-P1[0])**2 + (P2[1]-P1[1])**2 )
-
-def midpoint(P1, P2):
-    "Find the midpoint of two 2D points"
-    return ((P1[0]+P2[0])/2, (P1[1]+P2[1])/2)
-
-def scalar_product(P1, P0, P2):
-    "Find the scalar product of P1-P0 and P2-P0 given all the three points (note the order or args)"
-    return (P1[0]-P0[0])*(P2[0]-P0[0])+(P1[1]-P0[1])*(P2[1]-P0[1])
+    "Find Euclidean distance between two points"
+    return np.linalg.norm(P2-P1)
 
 def three_point_cosine(P1, P0, P2):
     "Find cosine of the angle between P1-P0 and P2-P0 (note the order of args)"
-    return scalar_product(P1, P0, P2)/(distance(P1,P0)*distance(P2,P0))
-
-def sign(x):
-    "Amusingly, Python doesn't have a native sign() function"
-    return (x>0)-(x<0)
+    return np.dot(P1-P0, P2-P0)/(distance(P1,P0)*distance(P2,P0))
 
 def clockwiseness_of_points(P1, P2, P3):
     "Detect whether the points are ordered clockwise (1), collinear (0) or counter-clockwise(-1)"
-    return  sign((P2[0]-P1[0])*(P3[1]-P1[1])-(P2[1]-P1[1])*(P3[0]-P1[0]))
+    return  np.sign(np.linalg.norm(np.cross(P2-P1,P3-P1)))
 
 def turn_and_scale(Z, D, cos_f, rho):
     "Relative to centre Z and axis ZD, find the point A in polar coordinates (phi,rho) and map it to Cartesian"
 
     sin_f       = math.sqrt(abs(1.0 - cos_f**2))    # abs() is needed in the rarest of cases when cos_f *seems* to go over 1.0
-    ZD_length   = distance(Z, D)
-    U_x         = (D[0]-Z[0])/ZD_length
-    U_y         = (D[1]-Z[1])/ZD_length
-    A_x         = rho * (  U_x*cos_f + U_y*sin_f ) + Z[0]
-    A_y         = rho * ( -U_x*sin_f + U_y*cos_f ) + Z[1]
-
-    return (A_x, A_y)
+    U           = (D-Z)/distance(Z, D)              # unit vector in the original direction relative to Z
+    A           = rho * np.dot(U , [[cos_f, -sin_f], [sin_f, cos_f]]) + Z
+    return A
 
 class Ellipse:
     "Computes and stores parameters of the ellipse and provides some helper geometry methods"
@@ -81,7 +65,8 @@ class Ellipse:
     def tilt_deg(self):
         "Return the tilt of the ellipse in degrees"
 
-        return math.degrees( math.atan2(self.F2[1]-self.F1[1], self.F2[0]-self.F1[0]) )
+        diff = self.F2-self.F1
+        return math.degrees( math.atan2(diff[1], diff[0]) )
 
     def draw_ellipse_fragment( self, dwg, A, B, tick_parent, show_leftovers=False ):
         "Draw an ellipse fragment given two limits"
@@ -90,12 +75,12 @@ class Ellipse:
 
             # visible part of the component ellipse:
         for (stripe_dashoffset, stripe_colour) in ( (10, self.F1.colour), (0, self.F2.colour) ):
-            dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], A[1], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
+            dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (*A, self.a, self.b, tilt_deg, *B), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
 
             # remaining, invisible part of the component ellipse:
         if show_leftovers:
             for (stripe_dashoffset, stripe_colour) in ( (0, self.F1.colour), (10, self.F2.colour) ):
-                dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], A[1], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
+                dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (*A, self.a, self.b, tilt_deg, *B), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
 
         if tick_parent is not None:
             from_tick   = turn_and_scale(B, tick_parent, 1,  10)
@@ -106,15 +91,15 @@ class Ellipse:
         "Draw a pencil mark given a fraction 0..1 that defines the convex combination"
 
             # find the angles relative to ellipse.F1 in local coordinates:
-        gamma   = math.acos( three_point_cosine(self.F2, self.F1, (A[0],A[1])) )
-        delta   = math.acos( three_point_cosine(self.F2, self.F1, (B[0],B[1])) )
+        gamma   = math.acos( three_point_cosine(self.F2, self.F1, A) )
+        delta   = math.acos( three_point_cosine(self.F2, self.F1, B) )
             # now we can create any convex combination and map it onto the corresponding ellipse fragment:
         mix     = gamma * (1-pencil_mark_fraction) + delta * pencil_mark_fraction
-        (Mx,My) = self.point_on_the_ellipse( math.cos( mix ) )
+        M       = self.point_on_the_ellipse( math.cos( mix ) )
 
-        dwg.add( dwg.circle( center=(Mx,My), r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
-        dwg.add( dwg.line( start=self.F1[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
-        dwg.add( dwg.line( start=self.F2[0:2], end=(Mx,My), stroke='blue', stroke_width=1  ) )
+        dwg.add( dwg.circle( center=M, r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
+        dwg.add( dwg.line( start=self.F1.tolist(), end=M, stroke='blue', stroke_width=1  ) )
+        dwg.add( dwg.line( start=self.F2.tolist(), end=M, stroke='blue', stroke_width=1  ) )
 
 
 class MultiEllipse:
@@ -146,7 +131,7 @@ class MultiEllipse:
         "Draw the rest of the rope loop (between P[r] and P[l])"
 
         for i in range(r-self.n if l<r else r, l):
-            self.dwg.add( self.dwg.line( start=self.P[i][0:2], end=self.P[i+1][0:2], stroke='blue', stroke_width=1  ) )
+            self.dwg.add( self.dwg.line( start=self.P[i].tolist(), end=self.P[i+1].tolist(), stroke='blue', stroke_width=1  ) )
 
     def draw_with_slack(self, slack, pencil_mark_fragment=-1, pencil_mark_fraction=0.1):
         "Draw a system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
@@ -177,11 +162,11 @@ class MultiEllipse:
             ellipse         = Ellipse(self.P[l], self.P[r], d)
             l_next          = (l+1) % self.n
             r_next          = (r+1) % self.n
-            cos_for_B       =  three_point_cosine(self.P[l], self.P[r], self.P[r_next])
+            cos_for_B       = three_point_cosine(self.P[l], self.P[r], self.P[r_next])
             B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=1 )
-            cos_of_B_rel_F1 =  three_point_cosine(B, self.P[l], self.P[r])
+            cos_of_B_rel_F1 = three_point_cosine(B, self.P[l], self.P[r])
 
-            cos_for_A2      =  three_point_cosine(self.P[r], self.P[l], self.P[l_next])
+            cos_for_A2      = three_point_cosine(self.P[r], self.P[l], self.P[l_next])
             A2              = ellipse.point_on_the_ellipse( cos_for_A2, focus_sign=-1 )
 
                 # compare two right limit candidates and choose the one with greater angle => smaller cosine:
