@@ -7,18 +7,34 @@ import filecmp
 import unittest
 
 class EllipseTests(unittest.TestCase):
-    def setUp(self):
-        # Create a temporary directory
-        self.test_dir = tempfile.mkdtemp()
+    @classmethod
+    def setUpClass(cls):
+        # Create a temporary directory before all the tests
+        cls.test_dir = tempfile.mkdtemp()
+        ellipse.create_drawings( cls.test_dir )
 
-    def tearDown(self):
-        # Remove the directory after the test
-        shutil.rmtree(self.test_dir)
+    @classmethod
+    def tearDownClass(cls):
+        # Remove the directory after all the tests
+        shutil.rmtree( cls.test_dir )
 
-    def test_recreate_and_compare_examples(self):
-        ellipse.create_drawings( self.test_dir )
-        for filename in ['three_foci_without_leftovers.svg', 'three_foci_with_leftovers.svg', 'four_foci_without_leftovers.svg', 'four_foci_with_leftovers.svg', 'seven_foci_different_slacks.svg']:
-            self.assertTrue(filecmp.cmp( 'examples/'+filename, self.test_dir+'/'+filename), msg=filename+" is ok")
+    def _compare_one_file(self, filename):
+        self.assertTrue(filecmp.cmp( 'examples/'+filename, self.test_dir+'/'+filename), msg=filename+" is ok")
+
+    def test_three_foci_without_leftovers(self):
+        self._compare_one_file('three_foci_without_leftovers.svg')
+
+    def test_three_foci_with_leftovers(self):
+        self._compare_one_file('three_foci_with_leftovers.svg')
+
+    def test_four_foci_without_leftovers(self):
+        self._compare_one_file('four_foci_without_leftovers.svg')
+
+    def test_four_foci_with_leftovers(self):
+        self._compare_one_file('four_foci_with_leftovers.svg')
+
+    def test_seven_foci_different_slacks(self):
+        self._compare_one_file('seven_foci_different_slacks.svg')
 
 if __name__ == '__main__':
     unittest.main()
