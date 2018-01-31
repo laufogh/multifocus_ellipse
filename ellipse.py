@@ -85,7 +85,7 @@ class Ellipse:
         if tick_parent is not None:
             from_tick   = turn_and_scale(B, tick_parent, 1,  10)
             to_tick     = turn_and_scale(B, tick_parent, 1, -10)
-            dwg.add( dwg.line( start=from_tick, end=to_tick, stroke=tick_parent.colour, fill=tick_parent.colour, stroke_width=6, stroke_linecap='round' ) )
+            dwg.add( dwg.line( start=map(int, from_tick), end=map(int, to_tick), stroke=tick_parent.colour, fill=tick_parent.colour, stroke_width=6, stroke_linecap='round' ) )
 
     def draw_a_pencil_mark( self, dwg, A, B, pencil_mark_fraction ):
         "Draw a pencil mark given a fraction 0..1 that defines the convex combination"
@@ -98,8 +98,8 @@ class Ellipse:
         M       = self.point_on_the_ellipse( math.cos( mix ) )
 
         dwg.add( dwg.circle( center=M, r=5,     stroke='blue', stroke_width=1, fill='none' ) )    # "mix" tick mark
-        dwg.add( dwg.line( start=self.F1.tolist(), end=M, stroke='blue', stroke_width=1  ) )
-        dwg.add( dwg.line( start=self.F2.tolist(), end=M, stroke='blue', stroke_width=1  ) )
+        dwg.add( dwg.line( start=map(int, self.F1.tolist()), end=map(int, M), stroke='blue', stroke_width=1  ) )
+        dwg.add( dwg.line( start=map(int, self.F2.tolist()), end=map(int, M), stroke='blue', stroke_width=1  ) )
 
 
 class MultiEllipse:
@@ -131,7 +131,7 @@ class MultiEllipse:
         "Draw the rest of the rope loop (between P[r] and P[l])"
 
         for i in range(r-self.n if l<r else r, l):
-            self.dwg.add( self.dwg.line( start=self.P[i].tolist(), end=self.P[i+1].tolist(), stroke='blue', stroke_width=1  ) )
+            self.dwg.add( self.dwg.line( start=map(int, self.P[i].tolist()), end=map(int, self.P[i+1].tolist()), stroke='blue', stroke_width=1  ) )
 
     def draw_with_slack(self, slack, pencil_mark_fragment=-1, pencil_mark_fraction=0.1):
         "Draw a system of 2*len(P) ellipse fragments that make up the sought-for smooth convex shape"
