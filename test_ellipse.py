@@ -6,6 +6,10 @@ import shutil, tempfile
 import filecmp
 import unittest
 
+def _slurp_file(filepath):
+    with open( filepath ) as fd: contents = fd.read()
+    return contents
+
 class EllipseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -19,7 +23,10 @@ class EllipseTests(unittest.TestCase):
         shutil.rmtree( cls.test_dir )
 
     def _compare_one_file(self, filename):
-        self.assertTrue(filecmp.cmp( 'examples/'+filename, self.test_dir+'/'+filename), msg=filename+" is ok")
+        example_contents    = _slurp_file( 'examples/'        + filename )
+        test_contents       = _slurp_file( self.test_dir + '/' + filename )
+        self.assertTrue( len(example_contents) > 0 )
+        self.assertEqual( example_contents, test_contents, msg=filename+' is ok' )
 
     def test_three_foci_without_leftovers(self):
         self._compare_one_file('three_foci_without_leftovers.svg')
