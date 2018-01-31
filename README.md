@@ -1,6 +1,6 @@
 # multifocus_ellipse
 
-[![Build Status](https://travis-ci.org/ens-lg4/multifocus_ellipse?branch=master)](https://travis-ci.org/ens-lg4/multifocus_ellipse)
+[![Build Status](https://travis-ci.org/ens-lg4/multifocus_ellipse.svg?branch=master)](https://travis-ci.org/ens-lg4/multifocus_ellipse)
 
 Extending the [classical pins-string-and-pencil ellipse drawing technique](https://www.youtube.com/watch?v=0maahsJQOJE&t=30) to more than 2 foci.
 The generic problem is, given a set of 2D points, make a string loop around them and the tip of a pencil
