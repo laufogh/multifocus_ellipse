@@ -75,12 +75,12 @@ class Ellipse:
 
             # visible part of the component ellipse:
         for (stripe_dashoffset, stripe_colour) in ( (10, self.F1.colour), (0, self.F2.colour) ):
-            dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (*A, self.a, self.b, tilt_deg, *B), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
+            dwg.add( dwg.path( d="M %f,%f A %f,%f %f 0,1 %f,%f" % (A[0], B[0], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=6, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='10,10', fill='none') )
 
             # remaining, invisible part of the component ellipse:
         if show_leftovers:
             for (stripe_dashoffset, stripe_colour) in ( (0, self.F1.colour), (10, self.F2.colour) ):
-                dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (*A, self.a, self.b, tilt_deg, *B), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
+                dwg.add( dwg.path( d="M %f,%f A %f,%f %f 1,0 %f,%f" % (A[0], B[0], self.a, self.b, tilt_deg, B[0], B[1]), stroke=stripe_colour, stroke_width=2, stroke_dashoffset=stripe_dashoffset, stroke_dasharray='5,15', fill='none') )
 
         if tick_parent is not None:
             from_tick   = turn_and_scale(B, tick_parent, 1,  10)
