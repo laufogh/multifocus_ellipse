@@ -224,16 +224,19 @@ class MultiEllipse:
                                      pencil_mark_fraction=(subfragment_index+0.5)/subfragments)
                 self.dwg.save()
 
-if __name__ == '__main__':
+
+def create_drawings(directory):
+    "To recreate all the example drawings manually, run create_drawings('examples')"
+
     P1              = ColouredPoint( [400, 500], colour='red' )
     P2              = ColouredPoint( [600, 400], colour='orange' )
     P3              = ColouredPoint( [600, 700], colour='purple' )
     P4              = ColouredPoint( [500, 700], colour='green' )
 
-    MultiEllipse([P1, P2, P4], filename='examples/three_foci_without_leftovers.svg').draw()
-    MultiEllipse([P1, P2, P4], show_leftovers=True, filename='examples/three_foci_with_leftovers.svg').draw()
-    MultiEllipse([P1, P2, P3, P4], filename='examples/four_foci_without_leftovers.svg').draw()
-    MultiEllipse([P1, P2, P3, P4], show_leftovers=True, filename='examples/four_foci_with_leftovers.svg').draw()
+    MultiEllipse([P1, P2, P4], filename=directory+'/three_foci_without_leftovers.svg').draw()
+    MultiEllipse([P1, P2, P4], show_leftovers=True, filename=directory+'/three_foci_with_leftovers.svg').draw()
+    MultiEllipse([P1, P2, P3, P4], filename=directory+'/four_foci_without_leftovers.svg').draw()
+    MultiEllipse([P1, P2, P3, P4], show_leftovers=True, filename=directory+'/four_foci_with_leftovers.svg').draw()
     MultiEllipse([
             ColouredPoint( [400,400], colour='red'),
             ColouredPoint( [600,400], colour='orange'),
@@ -242,8 +245,8 @@ if __name__ == '__main__':
             ColouredPoint( [530,620], colour='cyan'),
             ColouredPoint( [450,600], colour='blue'),
             ColouredPoint( [380,520], colour='purple')
-        ], show_tickmarks=True, filename='examples/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
+        ], show_tickmarks=True, filename=directory+'/seven_foci_different_slacks.svg').draw_parallel([25, 50, 100, 200, 400])
 
-#    MultiEllipse([P1, P2, P4], filename='pencil_mark_%02d.svg').draw_with_pencil_marks()
-#    os.system('convert -loop 0 -dispose Background -delay 5 pencil_mark_*.svg examples/running_pencil_animation.gif')
+    # MultiEllipse([P1, P2, P4], filename='pencil_mark_%02d.svg').draw_with_pencil_marks()
+    # os.system('convert -loop 0 -dispose Background -delay 5 pencil_mark_*.svg running_pencil_animation.gif')
 
