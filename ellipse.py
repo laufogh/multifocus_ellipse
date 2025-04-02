@@ -109,7 +109,7 @@ class Ellipse:
 class MultiEllipse:
     "Stores parameters of a MultiEllipse and provides a method to draw it"
 
-    def __init__(self, P, show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000,1000)):
+    def __init__(self, P, show_leftovers=False, show_tickmarks=True, filename="example.svg", canvas_size=(1000, 1000)):
         self.P              = P
         self.show_leftovers = show_leftovers
         self.show_tickmarks = show_tickmarks
@@ -117,6 +117,7 @@ class MultiEllipse:
         self.canvas_size    = canvas_size
         self.dist_2_prev    = []
         self.n              = len(P)
+        self.points_on_curve = []  # Add a list to store the computed points
         for i in range(self.n):
             self.dist_2_prev.append( distance(P[i], P[i-1]) )
 
@@ -159,43 +160,50 @@ class MultiEllipse:
         fragments   = 0
 
             # walk over all the fragments until we attempt to create the first fragment again:
-        while l!=0 or l_next!=0:
+        while l != 0 or l_next != 0:
             if pencil_mark_fragment == fragments:
-                self.draw_rest_of_rope( l, r )
+                self.draw_rest_of_rope(l, r)
 
-            ellipse         = Ellipse(self.P[l], self.P[r], d)
-            l_next          = (l+1) % self.n
-            r_next          = (r+1) % self.n
-            cos_for_B       = three_point_cosine(self.P[l], self.P[r], self.P[r_next])
-            B               = ellipse.point_on_the_ellipse( cos_for_B, focus_sign=1 )
+            ellipse = Ellipse(self.P[l], self.P[r], d)
+            l_next = (l + 1) % self.n
+            r_next = (r + 1) % self.n
+            cos_for_B = three_point_cosine(self.P[l], self.P[r], self.P[r_next])
+            B = ellipse.point_on_the_ellipse(cos_for_B, focus_sign=1)
             cos_of_B_rel_F1 = three_point_cosine(B, self.P[l], self.P[r])
 
-            cos_for_A2      = three_point_cosine(self.P[r], self.P[l], self.P[l_next])
-            A2              = ellipse.point_on_the_ellipse( cos_for_A2, focus_sign=-1 )
+            cos_for_A2 = three_point_cosine(self.P[r], self.P[l], self.P[l_next])
+            A2 = ellipse.point_on_the_ellipse(cos_for_A2, focus_sign=-1)
 
                 # compare two right limit candidates and choose the one with greater angle => smaller cosine:
             if cos_for_A2 < cos_of_B_rel_F1:
-                B   = A2
-                l   = l_next
-                d  -= self.dist_2_prev[l]
+                B = A2
+                l = l_next
+                d -= self.dist_2_prev[l]
                 tick_parent = self.P[l]
             else:
                 tick_parent = self.P[r]
-                r   = r_next
-                d  += self.dist_2_prev[r]
+                r = r_next
+                d += self.dist_2_prev[r]
 
             if not self.show_tickmarks:
                 tick_parent = None
 
-            ellipse.draw_ellipse_fragment( self.dwg, A, B, tick_parent, show_leftovers=self.show_leftovers )
-            if pencil_mark_fragment == fragments:
-                ellipse.draw_a_pencil_mark( self.dwg, A, B, pencil_mark_fraction )
+            # Store the computed points A and B
+            self.points_on_curve.append(A.tolist())
+            self.points_on_curve.append(B.tolist())
 
-            fragments   += 1
-            A = B     # next iteration inherits the current one's right limit for its left
+            ellipse.draw_ellipse_fragment(self.dwg, A, B, tick_parent, show_leftovers=self.show_leftovers)
+            if pencil_mark_fragment == fragments:
+                ellipse.draw_a_pencil_mark(self.dwg, A, B, pencil_mark_fraction)
+
+            fragments += 1
+            A = B  # Next iteration inherits the current one's right limit for its left
 
         return fragments
 
+    def get_points(self):
+        "Return the computed points on the curve as a list"
+        return self.points_on_curve
 
     def draw(self, slack=250):
 
