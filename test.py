@@ -23,7 +23,7 @@ P4 = ColouredPoint([200+correction_x,90+correction_y],colour='green')
 # Generate an ellipse for four points
 multi_ellipse_four = MultiEllipse([P1, P2, P3, P4], filename='test.svg')
 
-multi_ellipse_four.draw(slack=50)
+multi_ellipse_four.draw(slack=10)
 points_four = multi_ellipse_four.get_points()  # Get the points as a list
 
 # Plot the points for four foci
